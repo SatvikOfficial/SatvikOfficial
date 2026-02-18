@@ -46,23 +46,14 @@
 
 ---
 
-## 📊 GitHub Stats
+## ⚡ Fun Fact
 
-<div align="center">
-  <br/>
-  <img src="https://github-readme-stats.vercel.app/api?username=SatvikOfficial&show_icons=true&theme=tokyonight&hide_border=true&bg_color=00000000" height="180" alt="stats graph"  />
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=SatvikOfficial&layout=compact&theme=tokyonight&hide_border=true&bg_color=00000000" height="180" alt="languages graph" />
-  <br/>
-  <img src="https://github-readme-streak-stats.herokuapp.com/?user=SatvikOfficial&theme=tokyonight&hide_border=true&background=00000000" alt="streak graph" />
-</div>
-
-<br/>
-
-<div align="center">
-  <img src="https://komarev.com/ghpvc/?username=SatvikOfficial&style=flat-square&color=blue" alt="profile counter" />
-</div>
+- 🔭 I’m currently working on building **Autonomous AI Agents**!
+- 🌱 I’m currently learning **Advanced RAG Pipelines**.
+- 👯 I’m looking to collaborate on **Open Source GenAI Projects**.
 
 ---
+
 <div align="center">
-  <i>Let's build the future of AI together!</i>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&height=100&section=footer"/>
 </div>
