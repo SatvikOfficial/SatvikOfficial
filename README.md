@@ -28,33 +28,10 @@
 
 <div align="center">
   
-  ## 🎯 What I Do
-  
-  <table>
-    <tr>
-      <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Robot.png" width="50" /><br/>
-        <b>AI Agents</b><br/>
-        <sub>Building autonomous agents<br/>that think & act</sub>
-      </td>
-      <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Brain.png" width="50" /><br/>
-        <b>LLM Applications</b><br/>
-        <sub>Production-ready<br/>LLM pipelines</sub>
-      </td>
-      <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Microphone.png" width="50" /><br/>
-        <b>Speech Tech</b><br/>
-        <sub>Real-time conversational<br/>AI interfaces</sub>
-      </td>
-      <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Rocket.png" width="50" /><br/>
-        <b>GenAI Products</b><br/>
-        <sub>End-to-end generative<br/>AI solutions</sub>
-      </td>
-    </tr>
-  </table>
-  
+  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/satvik-mudgal-2a439b219/)
+  [![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=About.me&logoColor=white)](https://satvik-term.vercel.app/)
+  [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:satvikmudgalofficial@gmail.com)
+
 </div>
 
 ---
