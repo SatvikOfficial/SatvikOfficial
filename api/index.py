@@ -24,7 +24,6 @@ os.environ["NEO4J_URL"] = NEO4J_URI
 os.environ["NEO4J_USERNAME"] = NEO4J_USER
 os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
 
-# Parse and set POSTGRES env vars for lightrag's storage drivers
 if SUPABASE_PG_URL:
     parsed = urlparse(SUPABASE_PG_URL)
     os.environ["POSTGRES_USER"] = parsed.username or ""
@@ -61,7 +60,6 @@ rag = None
 async def get_rag():
     global rag
     if rag is None:
-        print("Initializing LightRAG...")
         try:
             rag = LightRAG(
                 working_dir=WORKING_DIR,
@@ -77,10 +75,8 @@ async def get_rag():
                 },
                 vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
             )
-            print("LightRAG instance created.")
         except Exception as e:
-            print(f"CRITICAL: initialization error: {str(e)}")
-            raise e
+            raise Exception(f"LightRAG Init Failed: {str(e)}")
     return rag
 
 app = FastAPI()
@@ -92,30 +88,46 @@ class Q(BaseModel):
 
 @app.get("/api/ping")
 def ping():
-    return {"status": "alive", "version": "1.3"}
+    return {"status": "alive", "version": "1.4"}
+
+@app.get("/api/init")
+async def init_pipeline():
+    try:
+        r = await get_rag()
+        data_path = os.path.join(os.path.dirname(__file__), "satvik_data.txt")
+        if os.path.exists(data_path):
+            with open(data_path) as f:
+                await r.ainsert(f.read())
+            return {"status": "success", "message": "Pipeline initialized and data ingested."}
+        return {"status": "partial", "message": "Pipeline initialized but data file missing."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "rag": rag is not None, "config": {
-        "neo4j": bool(NEO4J_URI),
-        "supabase": bool(SUPABASE_PG_URL),
-        "nvidia": bool(NVIDIA_API_KEY)
-    }}
+    return {"ok": True, "rag": rag is not None}
 
 @app.post("/api/ask")
 async def ask(req: Q):
     try:
         r = await get_rag()
-    except Exception as e:
-        raise HTTPException(500, f"RAG initialization failed: {str(e)}")
-        
-    async def stream():
         result = await r.aquery(req.question, param=QueryParam(mode=req.mode))
-        for i, word in enumerate(result.split(" ")):
-            yield f"data: {json.dumps({'token': word + (' ' if i < len(result.split())-1 else '')})}\n\n"
-            await asyncio.sleep(0.01)
-        yield "data: [DONE]\n\n"
-    return StreamingResponse(stream(), media_type="text/event-stream")
+        
+        async def stream():
+            # If empty, say something
+            if not result or len(str(result).strip()) == 0:
+                yield f"data: {json.dumps({'token': 'The AI pipeline is initialized but could not find specific answer in the data. Please try again or re-run /api/init'})}\n\n"
+            else:
+                for i, word in enumerate(str(result).split(" ")):
+                    yield f"data: {json.dumps({'token': word + (' ' if i < len(str(result).split())-1 else '')})}\n\n"
+                    await asyncio.sleep(0.01)
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(stream(), media_type="text/event-stream")
+    except Exception as e:
+        async def err_stream():
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(err_stream(), media_type="text/event-stream")
 
 @app.get("/api/graph")
 async def graph():
