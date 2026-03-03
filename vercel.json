@@ -1,7 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "satvik-ai/backend/main.py" },
+    { "source": "/api/(.*)", "destination": "api/index.py" },
     { "source": "/(.*)", "destination": "satvik-ai/frontend/index.html" }
   ]
 }
