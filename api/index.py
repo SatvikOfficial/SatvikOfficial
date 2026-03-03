@@ -52,11 +52,14 @@ async def get_rag():
                 llm_model_func=nvidia_llm,
                 embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=8192, func=nvidia_embed),
                 graph_storage="Neo4JStorage",
-                addon_params={"neo4j_url": NEO4J_URI, "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD)},
                 vector_storage="PGVectorStorage",
                 kv_storage="PGKVStorage",
+                addon_params={
+                    "neo4j_url": NEO4J_URI, 
+                    "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD),
+                    "connection_string": SUPABASE_PG_URL
+                },
                 vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-                kv_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
             )
             print("LightRAG instance created.")
         except Exception as e:
