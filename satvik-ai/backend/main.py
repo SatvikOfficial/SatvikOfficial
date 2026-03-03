@@ -78,7 +78,7 @@ async def lifespan(app: FastAPI):
     await init_rag()
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, root_path="/api")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class Q(BaseModel):
