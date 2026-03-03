@@ -100,20 +100,16 @@
   
   ## 📊 GitHub Stats
   
-  <table>
-    <tr>
-      <td>
-        <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true" alt="GitHub Stats"/>
-      </td>
-      <td>
-        <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true" alt="Top Languages"/>
-      </td>
-    </tr>
-  </table>
+  <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=7d8590" alt="GitHub Stats" width="49%"/>
+  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=7d8590" alt="Top Languages" width="49%"/>
   
-  <br/>
+  <br/><br/>
   
-  <img src="https://github-readme-streak-stats.herokuapp.com/?user=satvikmudgal&theme=dark&hide_border=true" alt="Streak Stats"/>
+  <img src="https://streak-stats.demolab.com?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82" alt="Streak Stats" width="100%"/>
+  
+  <br/><br/>
+  
+  <img src="https://github-profile-trophy.vercel.app/?username=satvikmudgal&theme=dark&no-frame=true&row=1&column=4" alt="Trophy Stats" width="100%"/>
   
 </div>
 
@@ -129,6 +125,18 @@
   - ⚡ **AI Automation Tools** — Streamlining workflows with intelligent agents  
   - 🏗️ **Scalable LLM Pipelines** — Optimizing inference & retrieval at scale
   - 🌱 **Learning** — Advanced RAG Pipelines & Multi-Agent Systems
+  
+</div>
+
+---
+
+<br/>
+
+<div align="center">
+  
+  ## 💻 Activity
+  
+  <img src="https://github-readme-activity-graph.vercel.app/graph?username=satvikmudgal&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true" alt="Activity Graph" width="100%"/>
   
 </div>
 
