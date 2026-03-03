@@ -19,6 +19,11 @@ NEO4J_USER      = os.environ.get("NEO4J_USER", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
 SUPABASE_PG_URL = os.environ.get("SUPABASE_PG_URL", "")
 
+# Set standard env vars for Neo4j and Postgres drivers
+os.environ["NEO4J_URL"] = NEO4J_URI
+os.environ["NEO4J_USERNAME"] = NEO4J_USER
+os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
+
 # Parse and set POSTGRES env vars for lightrag's storage drivers
 if SUPABASE_PG_URL:
     parsed = urlparse(SUPABASE_PG_URL)
