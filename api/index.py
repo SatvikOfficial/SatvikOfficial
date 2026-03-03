@@ -27,12 +27,13 @@ os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
 
 if SUPABASE_PG_URL:
     try:
+        from urllib.parse import unquote
         parsed = urlparse(SUPABASE_PG_URL)
-        os.environ["POSTGRES_USER"] = parsed.username or ""
-        os.environ["POSTGRES_PASSWORD"] = parsed.password or ""
+        os.environ["POSTGRES_USER"] = unquote(parsed.username or "")
+        os.environ["POSTGRES_PASSWORD"] = unquote(parsed.password or "")
         os.environ["POSTGRES_HOST"] = parsed.hostname or ""
         os.environ["POSTGRES_PORT"] = str(parsed.port or 5432)
-        os.environ["POSTGRES_DATABASE"] = parsed.path.lstrip("/")
+        os.environ["POSTGRES_DATABASE"] = unquote(parsed.path.lstrip("/"))
     except: pass
 
 WORKING_DIR     = "/tmp/lightrag_cache"
