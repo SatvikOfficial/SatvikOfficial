@@ -64,18 +64,18 @@ async def get_rag():
             raise e
     return rag
 
-app = FastAPI(root_path="/api")
+app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class Q(BaseModel):
     question: str
     mode: str = "hybrid"
 
-@app.get("/ping")
+@app.get("/api/ping")
 def ping():
-    return {"status": "alive", "version": "1.2"}
+    return {"status": "alive", "version": "1.3"}
 
-@app.get("/health")
+@app.get("/api/health")
 def health():
     return {"ok": True, "rag": rag is not None, "config": {
         "neo4j": bool(NEO4J_URI),
@@ -83,7 +83,7 @@ def health():
         "nvidia": bool(NVIDIA_API_KEY)
     }}
 
-@app.post("/ask")
+@app.post("/api/ask")
 async def ask(req: Q):
     try:
         r = await get_rag()
@@ -98,7 +98,7 @@ async def ask(req: Q):
         yield "data: [DONE]\n\n"
     return StreamingResponse(stream(), media_type="text/event-stream")
 
-@app.get("/graph")
+@app.get("/api/graph")
 async def graph():
     from neo4j import GraphDatabase
     try:
