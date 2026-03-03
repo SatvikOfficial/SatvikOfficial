@@ -1,5 +1,4 @@
 import os, json, asyncio
-from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,7 +21,6 @@ WORKING_DIR     = "/tmp/lightrag_cache"
 os.makedirs(WORKING_DIR, exist_ok=True)
 
 async def nvidia_llm(prompt, system_prompt=None, history_messages=[], **kwargs):
-    # Use GLM5 with thinking enabled as requested
     return await openai_complete_if_cache(
         "z-ai/glm5", prompt,
         system_prompt=system_prompt,
@@ -44,61 +42,59 @@ async def nvidia_embed(texts):
 
 rag = None
 
-async def init_rag():
+async def get_rag():
     global rag
-    print("Initializing LightRAG...")
-    try:
-        rag = LightRAG(
-            working_dir=WORKING_DIR,
-            llm_model_func=nvidia_llm,
-            embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=8192, func=nvidia_embed),
-            graph_storage="Neo4JStorage",
-            addon_params={"neo4j_url": NEO4J_URI, "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD)},
-            vector_storage="PGVectorStorage",
-            kv_storage="PGKVStorage",
-            vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-            kv_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-        )
-        print("LightRAG instance created.")
-        
-        # Check if we need to ingest data
-        from neo4j import GraphDatabase
-        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
-        with driver.session() as s:
-            count = s.run("MATCH (n) RETURN count(n) AS c").single()["c"]
-        driver.close()
-        print(f"Graph node count: {count}")
-        if count == 0:
-            data_path = os.path.join(os.path.dirname(__file__), "satvik_data.txt")
-            if os.path.exists(data_path):
-                print(f"Ingesting data from {data_path}...")
-                with open(data_path) as f:
-                    await rag.ainsert(f.read())
-                print("Ingestion complete.")
-    except Exception as e:
-        print(f"CRITICAL: initialization error: {str(e)}")
-        # Don't re-raise, let health check show failure
+    if rag is None:
+        print("Initializing LightRAG...")
+        try:
+            rag = LightRAG(
+                working_dir=WORKING_DIR,
+                llm_model_func=nvidia_llm,
+                embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=8192, func=nvidia_embed),
+                graph_storage="Neo4JStorage",
+                addon_params={"neo4j_url": NEO4J_URI, "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD)},
+                vector_storage="PGVectorStorage",
+                kv_storage="PGKVStorage",
+                vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
+                kv_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
+            )
+            print("LightRAG instance created.")
+        except Exception as e:
+            print(f"CRITICAL: initialization error: {str(e)}")
+            raise e
+    return rag
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_rag()
-    yield
-
-app = FastAPI(lifespan=lifespan, root_path="/api")
+app = FastAPI(root_path="/api")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class Q(BaseModel):
     question: str
     mode: str = "hybrid"
 
+@app.get("/ping")
+def ping():
+    return {"status": "alive", "version": "1.2"}
+
+@app.get("/health")
+def health():
+    return {"ok": True, "rag": rag is not None, "config": {
+        "neo4j": bool(NEO4J_URI),
+        "supabase": bool(SUPABASE_PG_URL),
+        "nvidia": bool(NVIDIA_API_KEY)
+    }}
+
 @app.post("/ask")
 async def ask(req: Q):
-    if not rag: raise HTTPException(503, "RAG initializing")
+    try:
+        r = await get_rag()
+    except Exception as e:
+        raise HTTPException(500, f"RAG initialization failed: {str(e)}")
+        
     async def stream():
-        result = await rag.aquery(req.question, param=QueryParam(mode=req.mode))
+        result = await r.aquery(req.question, param=QueryParam(mode=req.mode))
         for i, word in enumerate(result.split(" ")):
             yield f"data: {json.dumps({'token': word + (' ' if i < len(result.split())-1 else '')})}\n\n"
-            await asyncio.sleep(0.015) # Faster streaming
+            await asyncio.sleep(0.01)
         yield "data: [DONE]\n\n"
     return StreamingResponse(stream(), media_type="text/event-stream")
 
@@ -108,31 +104,19 @@ async def graph():
     try:
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session() as s:
-            res = s.run("""
-                MATCH (n) WITH n LIMIT 150
-                OPTIONAL MATCH (n)-[r]->(m)
-                RETURN id(n) AS sid, n.id AS sname, n.entity_type AS stype, n.description AS sdesc,
-                       id(m) AS tid, m.id AS tname, r.keywords AS rlabel, r.weight AS w
-            """)
+            res = s.run("MATCH (n) WITH n LIMIT 150 OPTIONAL MATCH (n)-[r]->(m) RETURN id(n) AS sid, n.id AS sname, n.entity_type AS stype, n.description AS sdesc, id(m) AS tid, m.id AS tname, r.keywords AS rlabel, r.weight AS w")
             nodes, links, seen = {}, [], set()
             for rec in res:
                 if rec["sid"] not in nodes:
-                    nodes[rec["sid"]] = {"id": rec["sid"], "name": rec["sname"] or f"node_{rec['sid']}",
-                                          "type": rec["stype"] or "Unknown", "desc": rec["sdesc"] or ""}
+                    nodes[rec["sid"]] = {"id": rec["sid"], "name": rec["sname"] or f"node_{rec['sid']}", "type": rec["stype"] or "Unknown", "desc": rec["sdesc"] or ""}
                 if rec["tid"] is not None:
                     if rec["tid"] not in nodes:
-                        nodes[rec["tid"]] = {"id": rec["tid"], "name": rec["tname"] or f"node_{rec['tid']}",
-                                              "type": "Unknown", "desc": ""}
+                        nodes[rec["tid"]] = {"id": rec["tid"], "name": rec["tname"] or f"node_{rec['tid']}", "type": "Unknown", "desc": ""}
                     key = (rec["sid"], rec["tid"])
                     if key not in seen:
                         seen.add(key)
-                        links.append({"source": rec["sid"], "target": rec["tid"],
-                                      "label": (rec["rlabel"] or "").split(",")[0], "weight": float(rec["w"] or 1)})
+                        links.append({"source": rec["sid"], "target": rec["tid"], "label": (rec["rlabel"] or "").split(",")[0], "weight": float(rec["w"] or 1)})
         driver.close()
         return {"nodes": list(nodes.values()), "links": links}
     except Exception as e:
         return {"error": str(e), "nodes": [], "links": []}
-
-@app.get("/health")
-def health():
-    return {"ok": True, "rag": rag is not None}
