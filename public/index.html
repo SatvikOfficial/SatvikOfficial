@@ -164,9 +164,11 @@
 <script>
 // ── Config ────────────────────────────────────────────────────────────────────
 const API = "/api"; 
+console.log("Chat interface initialized with API path:", API);
 
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(tab) {
+  console.log("Switching to tab:", tab);
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='chat')||(i===1&&tab==='graph')));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById(tab+'-panel').classList.add('active');
@@ -197,6 +199,7 @@ async function sendMsg() {
   const q = input.value.trim();
   if (!q) return;
 
+  console.log("Sending question:", q);
   document.getElementById('suggestions').style.display = 'none';
   addMsg('user', q);
   input.value = '';
@@ -218,6 +221,7 @@ async function sendMsg() {
     });
 
     if (!res.ok) {
+        console.error("API Error:", res.status);
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || `Server error: ${res.status}`);
     }
@@ -231,23 +235,26 @@ async function sendMsg() {
     while (true) {
       const {done, value} = await reader.read();
       if (done) break;
-      for (const line of dec.decode(value).split('
-')) {
+      const lines = dec.decode(value).split('\n');
+      for (const line of lines) {
         if (!line.startsWith('data:')) continue;
         const raw = line.slice(5).trim();
         if (raw === '[DONE]') break;
         try {
           const d = JSON.parse(raw);
-          if (d.token) { text += d.token; bubble.innerHTML = text.replace(/
-/g,'<br/>'); }
+          if (d.token) { 
+            text += d.token; 
+            bubble.innerHTML = text.replace(/\n/g,'<br/>'); 
+          }
           if (d.error) { bubble.innerHTML = `<span style="color:#f78166">Error: ${d.error}</span>`; }
-        } catch {}
+        } catch(e) {}
       }
       document.getElementById('messages').scrollTop = 9999;
     }
   } catch (e) {
+    console.error("Fetch Error:", e);
     typingDiv.remove();
-    addMsg('bot', `<span style="color:#f78166">Could not reach the API. Make sure the backend is deployed.</span>`);
+    addMsg('bot', `<span style="color:#f78166">Error: ${e.message}</span>`);
   }
 
   busy = false;
@@ -273,15 +280,20 @@ function nodeColor(type) {
 }
 
 async function loadGraph() {
+  console.log("Loading graph...");
   try {
-    const data = await fetch(`${API}/graph`).then(r => r.json());
+    const res = await fetch(`${API}/graph`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
     if (data.error) throw new Error(data.error);
     document.getElementById('graph-loading').style.display = 'none';
     renderGraph(data.nodes, data.links);
     graphLoaded = true;
+    console.log("Graph rendered successfully.");
   } catch (e) {
+    console.error("Graph Error:", e);
     document.getElementById('graph-loading').innerHTML =
-      `<p style="color:#f78166">Failed to load graph — is the backend deployed?</p>`;
+      `<p style="color:#f78166">Failed to load graph: ${e.message}</p>`;
   }
 }
 
