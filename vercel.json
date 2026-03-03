@@ -1,18 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "satvik-ai/backend/main.py",
-      "use": "@vercel/python",
-      "config": { "runtime": "python3.11" }
-    },
-    {
-      "src": "satvik-ai/frontend/index.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "satvik-ai/backend/main.py" },
-    { "src": "/(.*)", "dest": "satvik-ai/frontend/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "satvik-ai/backend/main.py" },
+    { "source": "/(.*)", "destination": "satvik-ai/frontend/index.html" }
   ]
 }

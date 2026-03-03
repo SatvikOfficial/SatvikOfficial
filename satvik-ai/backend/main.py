@@ -46,32 +46,38 @@ rag = None
 
 async def init_rag():
     global rag
-    rag = LightRAG(
-        working_dir=WORKING_DIR,
-        llm_model_func=nvidia_llm,
-        embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=8192, func=nvidia_embed),
-        graph_storage="Neo4JStorage",
-        addon_params={"neo4j_url": NEO4J_URI, "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD)},
-        vector_storage="PGVectorStorage",
-        kv_storage="PGKVStorage",
-        vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-        kv_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-    )
-    
-    # Check if we need to ingest data
-    from neo4j import GraphDatabase
+    print("Initializing LightRAG...")
     try:
+        rag = LightRAG(
+            working_dir=WORKING_DIR,
+            llm_model_func=nvidia_llm,
+            embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=8192, func=nvidia_embed),
+            graph_storage="Neo4JStorage",
+            addon_params={"neo4j_url": NEO4J_URI, "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD)},
+            vector_storage="PGVectorStorage",
+            kv_storage="PGKVStorage",
+            vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
+            kv_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
+        )
+        print("LightRAG instance created.")
+        
+        # Check if we need to ingest data
+        from neo4j import GraphDatabase
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session() as s:
             count = s.run("MATCH (n) RETURN count(n) AS c").single()["c"]
         driver.close()
+        print(f"Graph node count: {count}")
         if count == 0:
             data_path = os.path.join(os.path.dirname(__file__), "satvik_data.txt")
             if os.path.exists(data_path):
+                print(f"Ingesting data from {data_path}...")
                 with open(data_path) as f:
                     await rag.ainsert(f.read())
+                print("Ingestion complete.")
     except Exception as e:
-        print(f"Graph check/ingestion error: {e}")
+        print(f"CRITICAL: initialization error: {str(e)}")
+        # Don't re-raise, let health check show failure
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
