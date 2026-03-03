@@ -1,188 +1,211 @@
-<!--
-  Hello, I'm Satvik
-  AI Engineer | LLM Enthusiast | Building the Future with AI
--->
-
 <div align="center">
-  
-  ![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&pause=1000&color=00DC82&center=true&width=600&lines=Hi+%F0%9F%91%8B+I'm+Satvik+Mudgal;AI+Engineer+%40+Nuvo+AI;Building+Scalable+GenAI+Systems;LLMs+%E2%80%A2+AI+Agents+%E2%80%A2+Speech+Tech)
-  
-  <br/>
-  
-  ### 🤖 AI Engineer based in Bengaluru, India
-  
-  > 🚀 Crafting intelligent systems with **LLMs**, **AI Agents**, and **Speech Technology**
-  
-  <br/>
-  
-  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white&labelColor=0A66C2)](https://www.linkedin.com/in/satvik-mudgal-2a439b219/)
-  [![Website](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=About.me&logoColor=white&labelColor=333)](https://satvikmudgal.vercel.app/)
-  [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white&labelColor=EA4335)](mailto:satvikmudgalofficial@gmail.com)
-  [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white&labelColor=333)](https://github.com/satvikmudgal)
-  
-</div>
 
----
+<img src="https://capsule-render.vercel.app/api?type=venom&color=0:0a0a0a,50:00DC82,100:0a0a0a&height=200&section=header&text=Satvik%20Mudgal&fontSize=70&fontColor=ffffff&animation=twinkling&fontAlignY=55&desc=AI%20Engineer%20%E2%80%A2%20LLM%20Systems%20%E2%80%A2%20Speech%20Tech&descSize=18&descAlignY=75&descColor=00DC82" />
+
+</div>
 
 <br/>
 
 <div align="center">
-  
-  ## 🎯 What I Do
-  
-  <table>
-    <tr>
-      <td align="center" valign="top">
-        <b>🤖 AI Agents</b><br/>
-        <sub>Building autonomous agents<br/>that think & act</sub>
-      </td>
-      <td align="center" valign="top">
-        <b>🧠 LLM Applications</b><br/>
-        <sub>Production-ready<br/>LLM pipelines</sub>
-      </td>
-      <td align="center" valign="top">
-        <b>🎙️ Speech Tech</b><br/>
-        <sub>Real-time conversational<br/>AI interfaces</sub>
-      </td>
-      <td align="center" valign="top">
-        <b>✨ GenAI Products</b><br/>
-        <sub>End-to-end generative<br/>AI solutions</sub>
-      </td>
-    </tr>
-  </table>
-  
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  🧠 Architecting Production AI — From Prototype to Planet    ║
+║  ⚡ LLMs • AI Agents • Speech AI • RAG • Multi-Modal Systems ║
+║  📍 Bengaluru, India  ·  🏢 Nuvo AI                         ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=JetBrains+Mono&size=16&duration=2000&pause=800&color=00DC82&center=true&width=700&lines=Building+autonomous+agents+that+reason+%26+act...;Scaling+LLM+pipelines+to+millions+of+requests...;Real-time+voice+AI+with+sub-200ms+latency...;Multimodal+AI+%E2%80%94+vision+%2B+audio+%2B+language+fused...;Turning+frontier+research+into+production+systems...)](https://git.io/typing-svg)
+
 </div>
 
 ---
 
-<br/>
+## 🧬 About Me
+
+```python
+class SatvikMudgal:
+    def __init__(self):
+        self.role        = "AI Engineer @ Nuvo AI"
+        self.location    = "Bengaluru, India 🇮🇳"
+        self.focus       = ["LLM Systems", "AI Agents", "Speech AI", "RAG", "Multi-Modal"]
+        self.languages   = ["Python", "JavaScript", "TypeScript"]
+        self.philosophy  = "Ship fast. Scale smart. Never stop learning."
+    
+    def currently_building(self):
+        return {
+            "agents"    : "Autonomous multi-agent systems with tool use & memory",
+            "speech"    : "Conversational voice AI with <200ms end-to-end latency",
+            "pipelines" : "Scalable RAG with hybrid search & re-ranking at scale",
+            "multimodal": "Vision + Audio + Language fusion systems",
+        }
+    
+    def contact(self):
+        return "satvikmudgalofficial@gmail.com"
+```
+
+---
+
+## ⚡ Core Expertise
+
+<table>
+  <tr>
+    <td align="center" width="200">
+      <img width="48" src="https://skillicons.dev/icons?i=python" /><br/>
+      <b>LLM Engineering</b><br/>
+      <sub>Fine-tuning · RLHF · RAG<br/>Prompt Engineering · Evals</sub>
+    </td>
+    <td align="center" width="200">
+      <img width="48" src="https://skillicons.dev/icons?i=pytorch" /><br/>
+      <b>AI Agents</b><br/>
+      <sub>Tool Use · Memory Systems<br/>Multi-Agent Orchestration</sub>
+    </td>
+    <td align="center" width="200">
+      <img width="48" src="https://skillicons.dev/icons?i=fastapi" /><br/>
+      <b>Speech AI</b><br/>
+      <sub>ASR · TTS · Wake Word<br/>Real-time Voice Pipelines</sub>
+    </td>
+    <td align="center" width="200">
+      <img width="48" src="https://skillicons.dev/icons?i=docker" /><br/>
+      <b>MLOps & Scale</b><br/>
+      <sub>Inference Optimization<br/>GPU Serving · Monitoring</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 🛠️ Tech Arsenal
 
 <div align="center">
-  
-  ## 🛠️ Tech Arsenal
-  
-  ### Languages & Frameworks
-  <p>
-    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
-    <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" alt="PyTorch"/>
-    <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="TensorFlow"/>
-    <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"/>
-    <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white" alt="LangChain"/>
-    <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
-    <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
-    <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
-    <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js"/>
-  </p>
-  
-  ### Cloud & DevOps
-  <p>
-    <img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" alt="GCP"/>
-    <img src="https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS"/>
-    <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
-    <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes"/>
-    <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git"/>
-  </p>
-  
-  ### Databases
-  <p>
-    <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
-    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" alt="MongoDB"/>
-    <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"/>
-  </p>
-  
+
+### 🤖 AI / ML Ecosystem
+<p>
+  <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=00DC82" />
+  <img src="https://img.shields.io/badge/LlamaIndex-7755FF?style=for-the-badge&logo=llama&logoColor=white" />
+  <img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" />
+  <img src="https://img.shields.io/badge/Anthropic-CC785C?style=for-the-badge&logo=anthropic&logoColor=white" />
+  <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
+  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" />
+  <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" />
+  <img src="https://img.shields.io/badge/CrewAI-00DC82?style=for-the-badge&logoColor=black" />
+</p>
+
+### 🔊 Speech & Real-time
+<p>
+  <img src="https://img.shields.io/badge/Whisper-412991?style=for-the-badge&logo=openai&logoColor=white" />
+  <img src="https://img.shields.io/badge/LiveKit-DC2626?style=for-the-badge&logoColor=white" />
+  <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" />
+  <img src="https://img.shields.io/badge/ElevenLabs-000000?style=for-the-badge&logoColor=white" />
+  <img src="https://img.shields.io/badge/Deepgram-6B52AE?style=for-the-badge&logoColor=white" />
+</p>
+
+### 🗄️ Vector & Data
+<p>
+  <img src="https://img.shields.io/badge/Pinecone-000000?style=for-the-badge&logoColor=00DC82" />
+  <img src="https://img.shields.io/badge/Weaviate-FF6D00?style=for-the-badge&logoColor=white" />
+  <img src="https://img.shields.io/badge/ChromaDB-FF6384?style=for-the-badge&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" />
+</p>
+
+### 🚀 Backend & Cloud
+<p>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/GCP-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" />
+  <img src="https://img.shields.io/badge/AWS-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" />
+</p>
+
 </div>
 
 ---
 
-<br/>
+## 🔥 What I'm Working On
+
+<table>
+  <tr>
+    <td>🤖</td>
+    <td><b>Multi-Agent Systems</b></td>
+    <td>Hierarchical agent networks with shared memory, dynamic tool routing, and autonomous sub-task delegation</td>
+  </tr>
+  <tr>
+    <td>🎙️</td>
+    <td><b>Real-time Voice AI</b></td>
+    <td>Sub-200ms conversational voice pipelines with streaming STT → LLM → TTS and interruption handling</td>
+  </tr>
+  <tr>
+    <td>🔍</td>
+    <td><b>Advanced RAG</b></td>
+    <td>Hybrid retrieval with BM25 + dense embeddings, cross-encoder re-ranking, and query routing</td>
+  </tr>
+  <tr>
+    <td>🖼️</td>
+    <td><b>Multimodal AI</b></td>
+    <td>Fusing vision + audio + language for richer, context-aware AI interactions</td>
+  </tr>
+  <tr>
+    <td>⚙️</td>
+    <td><b>LLM Optimization</b></td>
+    <td>Quantization, speculative decoding, KV-cache tuning — squeezing maximum perf per GPU dollar</td>
+  </tr>
+</table>
+
+---
+
+## 📊 GitHub Stats
 
 <div align="center">
-  
-  ## 📊 GitHub Stats
-  
-  <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=7d8590" alt="GitHub Stats" width="49%"/>
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=7d8590" alt="Top Languages" width="49%"/>
-  
-  <br/><br/>
-  
-  <img src="https://streak-stats.demolab.com?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82" alt="Streak Stats" width="100%"/>
-  
-  <br/><br/>
-  
-  <img src="https://github-profile-trophy.vercel.app/?username=satvikmudgal&theme=dark&no-frame=true&row=1&column=4" alt="Trophy Stats" width="100%"/>
-  
+
+<img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=c9d1d9&include_all_commits=true&count_private=true" width="49%" />
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=c9d1d9&langs_count=8" width="49%" />
+
+<br/><br/>
+
+<img src="https://streak-stats.demolab.com?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82&sideLabels=c9d1d9&dates=7d8590" width="70%" />
+
+<br/><br/>
+
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=satvikmudgal&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true&area_color=00DC8220" width="100%" />
+
 </div>
 
 ---
 
-<br/>
+## 🏆 Achievements
 
 <div align="center">
-  
-  ## 🔥 Current Focus
-  
-  - 🧠 **Multimodal AI Systems** — Integrating vision & audio into language models
-  - ⚡ **AI Automation Tools** — Streamlining workflows with intelligent agents  
-  - 🏗️ **Scalable LLM Pipelines** — Optimizing inference & retrieval at scale
-  - 🌱 **Learning** — Advanced RAG Pipelines & Multi-Agent Systems
-  
+<img src="https://github-profile-trophy.vercel.app/?username=satvikmudgal&theme=matrix&no-frame=true&row=1&column=6&margin-w=10" width="100%" />
 </div>
 
 ---
 
-<br/>
+## 📡 Let's Build Together
 
 <div align="center">
-  
-  ## 💻 Activity
-  
-  <img src="https://github-readme-activity-graph.vercel.app/graph?username=satvikmudgal&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true" alt="Activity Graph" width="100%"/>
-  
+
+> *"The best way to predict the future of AI is to build it."*
+
+<br/>
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/satvik-mudgal-2a439b219/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-00DC82?style=for-the-badge&logo=vercel&logoColor=black)](https://satvikmudgal.vercel.app/)
+[![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:satvikmudgalofficial@gmail.com)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/satvikmudgal)
+
+<br/>
+
+![Profile Views](https://komarev.com/ghpvc/?username=satvikmudgal&color=00DC82&style=for-the-badge&label=PROFILE+VIEWS)
+
+<br/>
+
 </div>
 
----
-
-<br/>
-
 <div align="center">
-  
-  ## 💬 Let's Connect
-  
-  <table align="center">
-    <tr>
-      <td>
-        <a href="https://www.linkedin.com/in/satvik-mudgal-2a439b219/">
-          <img src="https://img.shields.io/badge/💼-LinkedIn-0A66C2?style=for-the-badge" alt="LinkedIn"/>
-        </a>
-      </td>
-      <td>
-        <a href="https://satvikmudgal.vercel.app/">
-          <img src="https://img.shields.io/badge/🌐-Portfolio-000000?style=for-the-badge" alt="Portfolio"/>
-        </a>
-      </td>
-      <td>
-        <a href="mailto:satvikmudgalofficial@gmail.com">
-          <img src="https://img.shields.io/badge/📧-Email-EA4335?style=for-the-badge" alt="Email"/>
-        </a>
-      </td>
-    </tr>
-  </table>
-  
-  <br/>
-  
-  ### 👀 Profile Views
-  ![Profile Views](https://komarev.com/ghpvc/?username=satvikmudgal&color=00DC82)
-  
-</div>
-
----
-
-<br/>
-
-<div align="center">
-  
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:00DC82,100:0d1117&height=100&section=footer" alt="Footer"/>
-  
-  <sub>Built with ❤️ by Satvik Mudgal</sub>
-  
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:00DC82&height=100&section=footer&text=&fontColor=ffffff" />
 </div>
