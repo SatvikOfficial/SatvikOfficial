@@ -83,9 +83,9 @@ class SatvikMudgal:
 ### 🤖 AI / ML Ecosystem
 <p>
   <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=langchain&logoColor=00DC82" />
-  <img src="https://img.shields.io/badge/LlamaIndex-7755FF?style=for-the-badge&logo=llama&logoColor=white" />
+  <img src="https://img.shields.io/badge/LlamaIndex-7755FF?style=for-the-badge&logoColor=white" />
   <img src="https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white" />
-  <img src="https://img.shields.io/badge/Anthropic-CC785C?style=for-the-badge&logo=anthropic&logoColor=white" />
+  <img src="https://img.shields.io/badge/Anthropic-CC785C?style=for-the-badge&logoColor=white" />
   <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
   <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white" />
   <img src="https://img.shields.io/badge/TensorFlow-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" />
@@ -96,7 +96,7 @@ class SatvikMudgal:
 <p>
   <img src="https://img.shields.io/badge/Whisper-412991?style=for-the-badge&logo=openai&logoColor=white" />
   <img src="https://img.shields.io/badge/LiveKit-DC2626?style=for-the-badge&logoColor=white" />
-  <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logo=webrtc&logoColor=white" />
+  <img src="https://img.shields.io/badge/WebRTC-333333?style=for-the-badge&logoColor=white" />
   <img src="https://img.shields.io/badge/ElevenLabs-000000?style=for-the-badge&logoColor=white" />
   <img src="https://img.shields.io/badge/Deepgram-6B52AE?style=for-the-badge&logoColor=white" />
 </p>
@@ -162,16 +162,13 @@ class SatvikMudgal:
 
 <div align="center">
 
-<img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=c9d1d9&include_all_commits=true&count_private=true" width="49%" />
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=c9d1d9&langs_count=8" width="49%" />
+<img height="180" src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=c9d1d9" />
+&nbsp;
+<img height="180" src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=c9d1d9&langs_count=8" />
 
 <br/><br/>
 
-<img src="https://streak-stats.demolab.com?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82&sideLabels=c9d1d9&dates=7d8590" width="70%" />
-
-<br/><br/>
-
-<img src="https://github-readme-activity-graph.vercel.app/graph?username=satvikmudgal&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true&area_color=00DC8220" width="100%" />
+<img src="https://streak-stats.demolab.com?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82&sideLabels=c9d1d9&dates=7d8590" width="60%" />
 
 </div>
 
@@ -180,12 +177,24 @@ class SatvikMudgal:
 ## 🏆 Achievements
 
 <div align="center">
-<img src="https://github-profile-trophy.vercel.app/?username=satvikmudgal&theme=matrix&no-frame=true&row=1&column=6&margin-w=10" width="100%" />
+
+<img src="https://github-profile-trophy.vercel.app/?username=satvikmudgal&theme=darkhub&no-frame=true&no-bg=true&margin-w=6&column=4" />
+
 </div>
 
 ---
 
-## 📡 Let's Build Together
+## 💻 Activity
+
+<div align="center">
+
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=satvikmudgal&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true" width="100%" />
+
+</div>
+
+---
+
+## 📡 Let's Connect
 
 <div align="center">
 
@@ -194,7 +203,7 @@ class SatvikMudgal:
 <br/>
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/satvik-mudgal-2a439b219/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-00DC82?style=for-the-badge&logo=vercel&logoColor=black)](https://satvikmudgal.vercel.app/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-00DC82?style=for-the-badge&logo=vercel&logoColor=black)](https://satvik-term.vercel.app)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:satvikmudgalofficial@gmail.com)
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/satvikmudgal)
 
@@ -204,8 +213,13 @@ class SatvikMudgal:
 
 <br/>
 
-</div>
+---
 
-<div align="center">
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0d1117,100:00DC82&height=100&section=footer&text=&fontColor=ffffff" />
+```
+while alive:
+    learn() → build() → ship() → repeat()
+```
+
+<sub>Built with ❤️ by Satvik Mudgal · Bengaluru, India</sub>
+
 </div>
