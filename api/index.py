@@ -56,7 +56,7 @@ async def get_rag():
                 vector_storage="PGVectorStorage",
                 kv_storage="PGKVStorage",
                 vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-                kv_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
+                kv_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
             )
             print("LightRAG instance created.")
         except Exception as e:
