@@ -32,7 +32,7 @@ class SatvikMudgal:
         self.focus       = ["LLM Systems", "AI Agents", "Speech AI", "RAG", "Multi-Modal"]
         self.languages   = ["Python", "JavaScript", "TypeScript"]
         self.philosophy  = "Ship fast. Scale smart. Never stop learning."
-    
+
     def currently_building(self):
         return {
             "agents"    : "Autonomous multi-agent systems with tool use & memory",
@@ -40,7 +40,7 @@ class SatvikMudgal:
             "pipelines" : "Scalable RAG with hybrid search & re-ranking at scale",
             "multimodal": "Vision + Audio + Language fusion systems",
         }
-    
+
     def contact(self):
         return "satvikmudgalofficial@gmail.com"
 ```
@@ -162,23 +162,29 @@ class SatvikMudgal:
 
 <div align="center">
 
-<img height="180" src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=c9d1d9" />
+<img height="180" src="https://github-readme-stats.vercel.app/api?username=SatvikOfficial&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=c9d1d9&cache_seconds=1800" />
 &nbsp;
-<img height="180" src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=c9d1d9&langs_count=8" />
+<img height="180" src="https://github-readme-stats.vercel.app/api/top-langs/?username=SatvikOfficial&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=c9d1d9&langs_count=8&cache_seconds=1800" />
 
 <br/><br/>
 
-<img src="https://streak-stats.demolab.com?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82&sideLabels=c9d1d9&dates=7d8590" width="60%" />
+<img src="https://streak-stats.demolab.com?user=SatvikOfficial&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82&sideLabels=c9d1d9&dates=7d8590" width="60%" />
 
 </div>
 
 ---
 
-## 🏆 Achievements
+## 🏆 Highlights
 
 <div align="center">
 
-<img src="https://github-profile-trophy.vercel.app/?username=satvikmudgal&theme=darkhub&no-frame=true&no-bg=true&margin-w=6&column=4" />
+| 🧠 Domain | 💡 What I've Shipped |
+|:---|:---|
+| **LLM Systems** | Production RAG pipelines serving real users at scale |
+| **AI Agents** | Multi-agent orchestration with tool use, memory & planning |
+| **Speech AI** | End-to-end voice bots with sub-200ms perceived latency |
+| **MLOps** | GPU inference servers, quantized model deployments on cloud |
+| **Multimodal** | Vision + language pipelines for document understanding |
 
 </div>
 
@@ -188,7 +194,7 @@ class SatvikMudgal:
 
 <div align="center">
 
-<img src="https://github-readme-activity-graph.vercel.app/graph?username=satvikmudgal&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true" width="100%" />
+<img src="https://github-readme-activity-graph.vercel.app/graph?username=SatvikOfficial&theme=react-dark&hide_border=true&bg_color=0d1117&color=00DC82&line=00DC82&point=ffffff&area=true" width="100%" />
 
 </div>
 
@@ -205,11 +211,11 @@ class SatvikMudgal:
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/satvik-mudgal-2a439b219/)
 [![Portfolio](https://img.shields.io/badge/Portfolio-00DC82?style=for-the-badge&logo=vercel&logoColor=black)](https://satvik-term.vercel.app)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:satvikmudgalofficial@gmail.com)
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/satvikmudgal)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/SatvikOfficial)
 
 <br/>
 
-![Profile Views](https://komarev.com/ghpvc/?username=satvikmudgal&color=00DC82&style=for-the-badge&label=PROFILE+VIEWS)
+![Profile Views](https://komarev.com/ghpvc/?username=SatvikOfficial&color=00DC82&style=for-the-badge&label=PROFILE+VIEWS)
 
 <br/>
 
