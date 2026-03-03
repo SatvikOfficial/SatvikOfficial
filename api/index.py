@@ -1,4 +1,5 @@
 import os, json, asyncio
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +18,16 @@ NEO4J_URI       = os.environ.get("NEO4J_URI", "")
 NEO4J_USER      = os.environ.get("NEO4J_USER", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
 SUPABASE_PG_URL = os.environ.get("SUPABASE_PG_URL", "")
+
+# Parse and set POSTGRES env vars for lightrag's storage drivers
+if SUPABASE_PG_URL:
+    parsed = urlparse(SUPABASE_PG_URL)
+    os.environ["POSTGRES_USER"] = parsed.username or ""
+    os.environ["POSTGRES_PASSWORD"] = parsed.password or ""
+    os.environ["POSTGRES_HOST"] = parsed.hostname or ""
+    os.environ["POSTGRES_PORT"] = str(parsed.port or 5432)
+    os.environ["POSTGRES_DATABASE"] = parsed.path.lstrip("/")
+
 WORKING_DIR     = "/tmp/lightrag_cache"
 os.makedirs(WORKING_DIR, exist_ok=True)
 
