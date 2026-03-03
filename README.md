@@ -33,23 +33,19 @@
   <table>
     <tr>
       <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Robot.png" width="50" /><br/>
-        <b>AI Agents</b><br/>
+        <b>🤖 AI Agents</b><br/>
         <sub>Building autonomous agents<br/>that think & act</sub>
       </td>
       <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Brain.png" width="50" /><br/>
-        <b>LLM Applications</b><br/>
+        <b>🧠 LLM Applications</b><br/>
         <sub>Production-ready<br/>LLM pipelines</sub>
       </td>
       <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Microphone.png" width="50" /><br/>
-        <b>Speech Tech</b><br/>
+        <b>🎙️ Speech Tech</b><br/>
         <sub>Real-time conversational<br/>AI interfaces</sub>
       </td>
       <td align="center" valign="top">
-        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Rocket.png" width="50" /><br/>
-        <b>GenAI Products</b><br/>
+        <b>✨ GenAI Products</b><br/>
         <sub>End-to-end generative<br/>AI solutions</sub>
       </td>
     </tr>
@@ -107,13 +103,17 @@
   <table>
     <tr>
       <td>
-        <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=radical&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=7d8590" alt="GitHub Stats"/>
+        <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true" alt="GitHub Stats"/>
       </td>
       <td>
-        <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=radical&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=7d8590" alt="Top Languages"/>
+        <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true" alt="Top Languages"/>
       </td>
     </tr>
   </table>
+  
+  <br/>
+  
+  <img src="https://github-readme-streak-stats.herokuapp.com/?user=satvikmudgal&theme=dark&hide_border=true" alt="Streak Stats"/>
   
 </div>
 
