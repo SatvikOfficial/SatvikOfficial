@@ -15,29 +15,36 @@ load_dotenv()
 NVIDIA_API_KEY  = os.environ.get("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 NEO4J_URI       = os.environ.get("NEO4J_URI", "")
-NEO4J_USER      = os.environ.get("NEO4J_USER", "")
+# Try both common names for the user variable
+NEO4J_USER      = os.environ.get("NEO4J_USERNAME") or os.environ.get("NEO4J_USER", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
 SUPABASE_PG_URL = os.environ.get("SUPABASE_PG_URL", "")
 
-# Set standard env vars for Neo4j and Postgres drivers
+# Sync back to os.environ for drivers that check it directly
 os.environ["NEO4J_URL"] = NEO4J_URI
 os.environ["NEO4J_USERNAME"] = NEO4J_USER
 os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
 
 if SUPABASE_PG_URL:
-    parsed = urlparse(SUPABASE_PG_URL)
-    os.environ["POSTGRES_USER"] = parsed.username or ""
-    os.environ["POSTGRES_PASSWORD"] = parsed.password or ""
-    os.environ["POSTGRES_HOST"] = parsed.hostname or ""
-    os.environ["POSTGRES_PORT"] = str(parsed.port or 5432)
-    os.environ["POSTGRES_DATABASE"] = parsed.path.lstrip("/")
+    try:
+        parsed = urlparse(SUPABASE_PG_URL)
+        os.environ["POSTGRES_USER"] = parsed.username or ""
+        os.environ["POSTGRES_PASSWORD"] = parsed.password or ""
+        os.environ["POSTGRES_HOST"] = parsed.hostname or ""
+        os.environ["POSTGRES_PORT"] = str(parsed.port or 5432)
+        os.environ["POSTGRES_DATABASE"] = parsed.path.lstrip("/")
+    except: pass
 
 WORKING_DIR     = "/tmp/lightrag_cache"
 os.makedirs(WORKING_DIR, exist_ok=True)
 
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
-    # If history_messages is in kwargs, pop it to avoid duplicate param
-    hist = history_messages if history_messages is not None else kwargs.pop("history_messages", [])
+    # Completely sanitize history_messages to prevent KeyError
+    hist = []
+    if history_messages is not None:
+        hist = history_messages
+    elif "history_messages" in kwargs:
+        hist = kwargs.pop("history_messages")
     
     return await openai_complete_if_cache(
         "z-ai/glm5", prompt,
@@ -79,7 +86,7 @@ async def get_rag():
                 vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
             )
         except Exception as e:
-            print(f"FAILED RAG INIT: {e}")
+            print(f"CRITICAL RAG INIT ERROR: {e}")
             raise e
     return rag
 
@@ -88,11 +95,11 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 class Q(BaseModel):
     question: str
-    mode: str = "hybrid"
+    mode: str = "local" # Default to 'local' for speed on Vercel
 
 @app.get("/api/ping")
 def ping():
-    return {"status": "alive", "version": "1.5"}
+    return {"status": "alive", "version": "1.6", "neo4j_user": NEO4J_USER}
 
 @app.get("/api/init")
 async def init_pipeline():
@@ -107,34 +114,35 @@ async def init_pipeline():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.get("/api/health")
-def health():
-    return {"ok": True, "rag": rag is not None}
-
 @app.post("/api/ask")
 async def ask(req: Q):
-    try:
-        r = await get_rag()
-        result = await r.aquery(req.question, param=QueryParam(mode=req.mode))
-        
-        async def stream():
-            # Ensure result is string and not None
+    async def stream():
+        try:
+            # Yield initial token so Vercel doesn't timeout immediately
+            yield f"data: {json.dumps({'token': 'Thinking...'})}\n\n"
+            await asyncio.sleep(0.1)
+            
+            r = await get_rag()
+            # Use 'local' mode if not specified, it's faster
+            query_mode = req.mode if req.mode in ["local", "global", "hybrid"] else "local"
+            result = await r.aquery(req.question, param=QueryParam(mode=query_mode))
+            
+            # Clear "Thinking..." with a space
+            yield f"data: {json.dumps({'token': '\b\b\b\b\b\b\b\b\b\b\b'})}\n\n" 
+            
             text_result = str(result or "").strip()
             if not text_result:
-                yield f"data: {json.dumps({'token': 'No specific answer found in the knowledge base. Please try re-initializing with /api/init.'})}\n\n"
+                yield f"data: {json.dumps({'token': 'I couldn\'t find a specific answer. Make sure /api/init has been run.'})}\n\n"
             else:
                 for i, word in enumerate(text_result.split(" ")):
-                    # Add space back if it wasn't the last word
                     token = word + (" " if i < len(text_result.split(" ")) - 1 else "")
                     yield f"data: {json.dumps({'token': token})}\n\n"
                     await asyncio.sleep(0.01)
-            yield "data: [DONE]\n\n"
-        return StreamingResponse(stream(), media_type="text/event-stream")
-    except Exception as e:
-        async def err_stream():
+        except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"
-            yield "data: [DONE]\n\n"
-        return StreamingResponse(err_stream(), media_type="text/event-stream")
+        yield "data: [DONE]\n\n"
+        
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 @app.get("/api/graph")
 async def graph():
