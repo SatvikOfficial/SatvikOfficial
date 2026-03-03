@@ -9,7 +9,7 @@
   
   <br/>
   
-  ### <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="30" /> AI Engineer based in Bengaluru, India
+  ### 🤖 AI Engineer based in Bengaluru, India
   
   > 🚀 Crafting intelligent systems with **LLMs**, **AI Agents**, and **Speech Technology**
   
@@ -28,10 +28,33 @@
 
 <div align="center">
   
-  [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/satvik-mudgal-2a439b219/)
-  [![Website](https://img.shields.io/badge/Website-000000?style=for-the-badge&logo=About.me&logoColor=white)](https://satvik-term.vercel.app/)
-  [![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:satvikmudgalofficial@gmail.com)
-
+  ## 🎯 What I Do
+  
+  <table>
+    <tr>
+      <td align="center" valign="top">
+        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Robot.png" width="50" /><br/>
+        <b>AI Agents</b><br/>
+        <sub>Building autonomous agents<br/>that think & act</sub>
+      </td>
+      <td align="center" valign="top">
+        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Brain.png" width="50" /><br/>
+        <b>LLM Applications</b><br/>
+        <sub>Production-ready<br/>LLM pipelines</sub>
+      </td>
+      <td align="center" valign="top">
+        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Microphone.png" width="50" /><br/>
+        <b>Speech Tech</b><br/>
+        <sub>Real-time conversational<br/>AI interfaces</sub>
+      </td>
+      <td align="center" valign="top">
+        <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Rocket.png" width="50" /><br/>
+        <b>GenAI Products</b><br/>
+        <sub>End-to-end generative<br/>AI solutions</sub>
+      </td>
+    </tr>
+  </table>
+  
 </div>
 
 ---
@@ -84,15 +107,10 @@
   <table>
     <tr>
       <td>
-        <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=7d8590" alt="GitHub Stats" width="100%"/>
+        <img src="https://github-readme-stats.vercel.app/api?username=satvikmudgal&show_icons=true&theme=radical&hide_border=true&bg_color=0d1117&title_color=00DC82&icon_color=00DC82&text_color=7d8590" alt="GitHub Stats"/>
       </td>
       <td>
-        <img src="https://github-readme-streak-stats.herokuapp.com/?user=satvikmudgal&theme=dark&hide_border=true&background=0d1117&ring=00DC82&fire=00DC82&currStreakLabel=00DC82" alt="Streak Stats" width="100%"/>
-      </td>
-    </tr>
-    <tr>
-      <td colspan="2" align="center">
-        <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=dark&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=7d8590" alt="Top Languages" width="100%"/>
+        <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=satvikmudgal&layout=compact&theme=radical&hide_border=true&bg_color=0d1117&title_color=00DC82&text_color=7d8590" alt="Top Languages"/>
       </td>
     </tr>
   </table>
@@ -106,8 +124,6 @@
 <div align="center">
   
   ## 🔥 Current Focus
-  
-  <img src="https://media.giphy.com/media/SWoSkT6DxTszqIKEqv/giphy.gif" width="50" />
   
   - 🧠 **Multimodal AI Systems** — Integrating vision & audio into language models
   - ⚡ **AI Automation Tools** — Streamlining workflows with intelligent agents  
