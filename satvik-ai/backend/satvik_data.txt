@@ -1,0 +1,80 @@
+# Satvik Mudgal — Personal Knowledge Base
+
+## Identity
+- **Name:** Satvik Mudgal
+- **Role:** AI Engineer
+- **Company:** Nuvo AI
+- **Location:** Bengaluru, India
+- **Email:** satvikmudgalofficial@gmail.com
+- **GitHub:** https://github.com/SatvikOfficial
+- **LinkedIn:** https://linkedin.com/in/satvik-mudgal-2a439b219
+- **Portfolio:** https://satvikmudgal.vercel.app
+- **Phone:** +91 6393926481
+
+## Education
+- **Vellore Institute of Technology (VIT):** Bachelor of Computer Science and Engineering (Core), 2021 - 2025.
+- **Societies:** Core Member of IEEE Coding Society.
+
+## Work Experience
+
+### AI/ML Engineer - Nuvo AI (Feb 2025 - Present)
+- **Role:** Building production-grade clinical AI systems for Healthgini, an AI-powered doctor–patient conversation intelligence platform.
+- **Key Achievements:**
+  - Designed end-to-end audio → ASR → NLP pipelines for medical insight extraction and SOAP-style summarization.
+  - Implemented clinical entity extraction, intent classification, and risk flag detection from transcripts.
+  - Developed embedding-based semantic search for contextual retrieval of patient interactions.
+  - Optimized inference latency for near real-time consultation assistance.
+  - Defined medical-domain evaluation metrics (WER, entity-level F1).
+
+### Research Associate - IndiaAI (MeitY | IIIT Delhi | Gates Foundation) (Dec 2024 - Jan 2025)
+- **Location:** Delhi / Bengaluru
+- **Project:** PM GatiShakti (PMG) AI/ML Analytics.
+- **Key Achievements:**
+  - Built ML pipelines combining NLP embeddings and structured government datasets for issue intelligence.
+  - Engineered hybrid features using project metadata (sector, state, agency) + semantic embeddings.
+  - Developed multi-class classification models for issue categories and resolution delays.
+  - Implemented embedding-based similarity search for historical case retrieval.
+  - Designed regression models for resolution timeline estimation.
+  - Built ML-driven dashboards for ranked prioritization and policy analytics.
+
+### AI/ML Backend Intern - BHASHINI (Digital India BHASHINI Division), MeitY (Aug 2024 - Nov 2024)
+- **Location:** New Delhi
+- **Project:** Vani Anuvaad (STS Platform).
+- **Key Achievements:**
+  - Modularized a monolithic STS backend into FastAPI services (ASR, NMT, TTS, VAD, Auth).
+  - Reduced end-to-end speech latency by ~40% (500ms → 128ms) by tuning Silero VADIterator.
+  - Improved speech boundary accuracy with stateful, pointer-based VAD.
+  - Built async, queue-based audio pipeline for jitter buffering.
+  - Improved ASR quality via RMS-based noise suppression.
+  - Prototyped WebRTC migration using aiortc and RTP decoding (PyAV).
+
+### Software Engineer Intern - National Informatics Centre (NIC), MeitY (Aug 2023 - Sept 2023)
+- **Location:** Noida / Lucknow
+- **Project:** Manav Sampada (UP) e-governance platform.
+- **Key Achievements:**
+  - Developed secure RESTful APIs with OAuth 2.0 to synchronize payroll and service data.
+  - Optimized SQL queries and JSON serialization for large-scale government workflows.
+  - Built a grievance redressal dashboard for query classification and routing.
+
+## Projects
+
+### HealthJini - AI-Driven Clinical Conversation Intelligence
+- **Description:** LLM-powered structured clinical note generation and diagnostic summarization.
+- **Tech:** ASR, NLP, LLMs, Medical Entity Extraction, Semantic Search.
+
+### Vaani.line – Real-Time Speech-to-Speech Multilingual Platform
+- **Description:** Modular FastAPI backend for low-latency multilingual communication.
+- **Tech:** ASR, NMT, TTS, VAD, WebRTC, Asyncio.
+
+### PM GatiShakti (PMG) AI/ML Analytics
+- **Description:** Modular ML pipelines for government issue analysis and prediction.
+- **Tech:** NLP, Embeddings, Regression Models, SQLAlchemy, PyMySQL.
+
+## Technical Skills
+- **Languages:** Python, Java, C++, SQL, JavaScript, TypeScript.
+- **AI/ML:** Machine Learning, Deep Learning, Supervised/Unsupervised Learning, Neural Networks (CNN, RNN, LSTM, Transformers), NLP, Speech Processing, Computer Vision.
+- **Frameworks & Tools:** FastAPI, LangChain, LlamaIndex, LightRAG, CrewAI, PyTorch, TensorFlow, OpenAI/Anthropic/NVIDIA APIs.
+- **Data & DBs:** Pinecone, Weaviate, ChromaDB, PostgreSQL, MongoDB, Redis, SQLAlchemy.
+- **Infrastructure:** Docker, Kubernetes, GCP, AWS, Vercel, Git, CI/CD, Microservices.
+- **Optimization:** Inference Optimization, Latency Tuning, Quantization, Speculative Decoding.
+- **General CS:** DSA, System Design, Operating Systems, DBMS, Networking, OOP.

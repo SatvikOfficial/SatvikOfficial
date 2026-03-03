@@ -47,6 +47,27 @@ class SatvikMudgal:
 
 ---
 
+## 🤖 Satvik's AI Assistant
+
+<div align="center">
+
+[![Ask Satvik's AI](https://img.shields.io/badge/🤖%20Ask%20Satvik's%20AI-00DC82?style=for-the-badge&labelColor=0d1117)](https://satvik-ai-frontend.vercel.app)
+
+</div>
+
+<!-- Embedded chatbot + knowledge graph -->
+<div align="center">
+<iframe
+  src="https://satvik-ai-frontend.vercel.app"
+  width="100%"
+  height="600"
+  style="border:none;border-radius:12px;"
+  title="Satvik's AI Assistant"
+></iframe>
+</div>
+
+---
+
 ## ⚡ Core Expertise
 
 <table>
