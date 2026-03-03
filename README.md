@@ -51,20 +51,11 @@ class SatvikMudgal:
 
 <div align="center">
 
-[![Ask Satvik's AI](https://img.shields.io/badge/🤖%20Ask%20Satvik's%20AI-00DC82?style=for-the-badge&labelColor=0d1117)](https://satvikmudgal.vercel.app/satvik-ai/frontend/index.html)
+[![Ask Satvik's AI](https://img.shields.io/badge/🤖%20Ask%20Satvik's%20AI-00DC82?style=for-the-badge&labelColor=0d1117)](https://satvik-official.vercel.app/)
 
 </div>
 
-<!-- Embedded chatbot + knowledge graph -->
-<div align="center">
-<iframe
-  src="/satvik-ai/frontend/index.html"
-  width="100%"
-  height="600"
-  style="border:none;border-radius:12px;"
-  title="Satvik's AI Assistant"
-></iframe>
-</div>
+*(Note: Click the badge above to chat with my AI assistant and explore my knowledge graph.)*
 
 ---
 
