@@ -35,11 +35,14 @@ if SUPABASE_PG_URL:
 WORKING_DIR     = "/tmp/lightrag_cache"
 os.makedirs(WORKING_DIR, exist_ok=True)
 
-async def nvidia_llm(prompt, system_prompt=None, history_messages=[], **kwargs):
+async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
+    # If history_messages is in kwargs, pop it to avoid duplicate param
+    hist = history_messages if history_messages is not None else kwargs.pop("history_messages", [])
+    
     return await openai_complete_if_cache(
         "z-ai/glm5", prompt,
         system_prompt=system_prompt,
-        history_messages=history_messages,
+        history_messages=hist,
         api_key=NVIDIA_API_KEY,
         base_url=NVIDIA_BASE_URL,
         temperature=1,
@@ -76,7 +79,8 @@ async def get_rag():
                 vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
             )
         except Exception as e:
-            raise Exception(f"LightRAG Init Failed: {str(e)}")
+            print(f"FAILED RAG INIT: {e}")
+            raise e
     return rag
 
 app = FastAPI()
@@ -88,7 +92,7 @@ class Q(BaseModel):
 
 @app.get("/api/ping")
 def ping():
-    return {"status": "alive", "version": "1.4"}
+    return {"status": "alive", "version": "1.5"}
 
 @app.get("/api/init")
 async def init_pipeline():
@@ -114,12 +118,15 @@ async def ask(req: Q):
         result = await r.aquery(req.question, param=QueryParam(mode=req.mode))
         
         async def stream():
-            # If empty, say something
-            if not result or len(str(result).strip()) == 0:
-                yield f"data: {json.dumps({'token': 'The AI pipeline is initialized but could not find specific answer in the data. Please try again or re-run /api/init'})}\n\n"
+            # Ensure result is string and not None
+            text_result = str(result or "").strip()
+            if not text_result:
+                yield f"data: {json.dumps({'token': 'No specific answer found in the knowledge base. Please try re-initializing with /api/init.'})}\n\n"
             else:
-                for i, word in enumerate(str(result).split(" ")):
-                    yield f"data: {json.dumps({'token': word + (' ' if i < len(str(result).split())-1 else '')})}\n\n"
+                for i, word in enumerate(text_result.split(" ")):
+                    # Add space back if it wasn't the last word
+                    token = word + (" " if i < len(text_result.split(" ")) - 1 else "")
+                    yield f"data: {json.dumps({'token': token})}\n\n"
                     await asyncio.sleep(0.01)
             yield "data: [DONE]\n\n"
         return StreamingResponse(stream(), media_type="text/event-stream")
