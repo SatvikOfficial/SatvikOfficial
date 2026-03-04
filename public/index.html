@@ -454,8 +454,8 @@ const API = '/api';
 let busy = false;
 let pipelineReady = false;
 let readinessTimer = null;
-let warmupTicker = null;
-let warmupPulse = 6;
+let initRequested = false;
+let displayProgress = 0;
 let graphLoaded = false;
 
 let svgZoom = null;
@@ -527,8 +527,18 @@ function renderPipelineState(state) {
   const headDot = document.getElementById('head-dot');
   const headStatus = document.getElementById('head-status');
 
-  fill.style.width = `${progress}%`;
-  percent.textContent = `${progress}%`;
+  if (status === 'ready') {
+    displayProgress = 100;
+  } else if (status === 'warming') {
+    displayProgress = Math.max(displayProgress, progress);
+  } else if (status === 'error') {
+    displayProgress = Math.max(displayProgress, progress || 100);
+  } else {
+    displayProgress = Math.max(displayProgress, progress);
+  }
+
+  fill.style.width = `${displayProgress}%`;
+  percent.textContent = `${displayProgress}%`;
   msg.textContent = message;
 
   if (status === 'ready') {
@@ -541,10 +551,6 @@ function renderPipelineState(state) {
     if (readinessTimer) {
       clearInterval(readinessTimer);
       readinessTimer = null;
-    }
-    if (warmupTicker) {
-      clearInterval(warmupTicker);
-      warmupTicker = null;
     }
     setComposerEnabled(true);
     setTimeout(() => { card.style.display = 'none'; }, 1400);
@@ -569,26 +575,6 @@ function renderPipelineState(state) {
   }
 }
 
-function startWarmupTicker() {
-  if (warmupTicker) clearInterval(warmupTicker);
-  warmupTicker = setInterval(() => {
-    if (pipelineReady) return;
-    warmupPulse = Math.min(93, warmupPulse + (warmupPulse < 45 ? 4 : 2));
-    renderPipelineState({
-      status: 'warming',
-      message: 'Initializing retrieval + knowledge graph...',
-      progress: warmupPulse,
-    });
-  }, 1200);
-}
-
-function stopWarmupTicker() {
-  if (warmupTicker) {
-    clearInterval(warmupTicker);
-    warmupTicker = null;
-  }
-}
-
 async function refreshReadiness() {
   try {
     const res = await fetch(`${API}/readiness`, { cache: 'no-store' });
@@ -601,14 +587,14 @@ async function refreshReadiness() {
 }
 
 async function initPipeline(force = false) {
+  initRequested = true;
   pipelineReady = false;
-  warmupPulse = 8;
+  displayProgress = 0;
   renderPipelineState({
     status: 'warming',
     message: 'Booting RAG pipeline...',
-    progress: warmupPulse,
+    progress: 6,
   });
-  startWarmupTicker();
 
   try {
     const url = force ? `${API}/init?force=true` : `${API}/init`;
@@ -616,6 +602,12 @@ async function initPipeline(force = false) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const state = await res.json();
     renderPipelineState(state);
+    if (!pipelineReady && !readinessTimer) {
+      readinessTimer = setInterval(async () => {
+        if (pipelineReady) return;
+        await refreshReadiness();
+      }, 3000);
+    }
   } catch (err) {
     renderPipelineState({
       status: 'error',
@@ -626,10 +618,8 @@ async function initPipeline(force = false) {
       readinessTimer = setInterval(async () => {
         if (pipelineReady) return;
         await refreshReadiness();
-      }, 12000);
+      }, 3000);
     }
-  } finally {
-    if (pipelineReady) stopWarmupTicker();
   }
 }
 
@@ -647,7 +637,11 @@ async function sendMsg() {
 
   if (!pipelineReady) {
     addMsg('bot', 'I am still initializing my retrieval pipeline. I will finish setup first, then answer.');
-    await initPipeline(false);
+    if (!initRequested) {
+      await initPipeline(false);
+    } else {
+      await refreshReadiness();
+    }
     if (!pipelineReady) return;
   }
 
@@ -866,12 +860,6 @@ function focusNode() {
 
 async function boot() {
   await initPipeline(false);
-  if (!pipelineReady && !readinessTimer) {
-    readinessTimer = setInterval(async () => {
-      if (pipelineReady) return;
-      await refreshReadiness();
-    }, 12000);
-  }
 }
 
 window.addEventListener('load', boot);

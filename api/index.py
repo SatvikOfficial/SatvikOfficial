@@ -757,7 +757,7 @@ async def _run_warmup(force_reindex=False):
         set_warmup_state("warming", "Preparing profile schema", 12)
         async with profile_cache_lock:
             payload = _load_profile_payload()
-        rag_text = payload["rag_text"]
+        rag_text = payload.get("rag_text", "")
         source_hash = payload["source_hash"]
         section_count = payload["section_count"]
 
@@ -767,50 +767,15 @@ async def _run_warmup(force_reindex=False):
 
         set_warmup_state(
             "warming",
-            "Connecting retrieval stores",
-            28,
+            "Loading profile context",
+            62,
             source_hash=source_hash,
             section_count=section_count,
         )
-        r = await get_rag()
 
-        set_warmup_state(
-            "warming",
-            "Checking index freshness",
-            52,
-            source_hash=source_hash,
-            section_count=section_count,
-        )
-        has_index = await _workspace_has_index(r)
-        indexed_hash = await _get_indexed_profile_hash(r)
-        index_stale = has_index and indexed_hash is not None and indexed_hash != source_hash
-        needs_full_build = force_reindex or (not has_index) or index_stale
-
-        if needs_full_build:
-            if has_index and (force_reindex or index_stale):
-                set_warmup_state(
-                    "warming",
-                    "Resetting stale profile index",
-                    64,
-                    source_hash=source_hash,
-                    section_count=section_count,
-                )
-                await _clear_workspace_index(r)
-                has_index = False
-
-            message = "Building knowledge graph index" if not has_index else "Refreshing profile index"
-            set_warmup_state(
-                "warming",
-                message,
-                78,
-                source_hash=source_hash,
-                section_count=section_count,
-            )
-            await r.ainsert(rag_text)
-            await _set_indexed_profile_hash(r, source_hash, section_count)
-            message = f"RAG pipeline ready ({section_count} structured sections)"
-        else:
-            message = "RAG pipeline ready"
+        # Chat uses profile_rag directly from the structured dataset and should not block
+        # on external graph/vector infrastructure health.
+        message = f"RAG profile ready ({section_count} structured sections)"
         set_warmup_state(
             "ready",
             message,
@@ -826,15 +791,17 @@ async def _run_warmup(force_reindex=False):
 
 async def ensure_warmup_started(force_reindex=False):
     global warmup_task
+    if warmup_task and not warmup_task.done():
+        return
     if warmup_state["status"] == "ready" and not force_reindex:
         return
-    if warmup_task and not warmup_task.done() and not force_reindex:
-        return
     async with warmup_task_lock:
+        if warmup_task and not warmup_task.done():
+            return
         if warmup_state["status"] == "ready" and not force_reindex:
             return
-        if warmup_task and not warmup_task.done() and not force_reindex:
-            return
+        if force_reindex:
+            set_warmup_state("warming", "Restarting warmup", 0)
         set_warmup_state(
             "warming",
             "Warmup task queued",
@@ -954,39 +921,8 @@ async def profile_schema():
 
 @app.get("/api/debug")
 async def debug():
-    r = await get_rag()
     out = {}
-
-    try:
-        db = r.doc_status.db
-        async with db.pool.acquire() as conn:
-            rows = await conn.fetch(
-                "SELECT * FROM LIGHTRAG_DOC_STATUS WHERE workspace=$1",
-                db.workspace,
-            )
-            out["doc_status_rows"] = [dict(rw) for rw in rows]
-            out["workspace"] = db.workspace
-            out["chunk_count"] = await conn.fetchval(
-                "SELECT COUNT(*) FROM LIGHTRAG_DOC_CHUNKS WHERE workspace=$1",
-                db.workspace,
-            )
-            try:
-                out["vector_count"] = await conn.fetchval(
-                    "SELECT COUNT(*) FROM LIGHTRAG_VDB_ENTITY WHERE workspace=$1",
-                    db.workspace,
-                )
-            except Exception as e:
-                out["vector_error"] = str(e)
-            try:
-                row = await conn.fetchrow(
-                    f"SELECT source_hash, section_count, updated_at FROM {PROFILE_META_TABLE} WHERE workspace=$1",
-                    db.workspace,
-                )
-                out["profile_meta"] = dict(row) if row else None
-            except Exception as e:
-                out["profile_meta_error"] = str(e)
-    except Exception as e:
-        out["postgres_error"] = str(e)
+    out["storage_mode"] = "profile_rag_primary"
 
     try:
         from neo4j import GraphDatabase
@@ -1007,8 +943,15 @@ async def debug():
 @app.post("/api/ask")
 async def ask(req: Q):
     try:
-        if warmup_state["status"] in {"idle", "error"}:
+        if warmup_state["status"] == "idle":
             await ensure_warmup_started()
+        if warmup_state["status"] == "error":
+            snapshot = _warmup_snapshot()
+            return {
+                "error": "Warmup failed. Retry /api/init to continue.",
+                "mode_used": "warmup_error",
+                "pipeline": snapshot,
+            }
         if warmup_state["status"] != "ready":
             snapshot = _warmup_snapshot()
             return {
@@ -1082,6 +1025,12 @@ async def graph():
     from collections import Counter
     from neo4j import GraphDatabase
 
+    async with profile_cache_lock:
+        payload = _load_profile_payload()
+    overlay_nodes, overlay_links = _schema_graph_overlay(payload.get("schema"))
+    nodes = {node["id"]: node for node in overlay_nodes}
+    links = list(overlay_links)
+
     try:
         driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session(database=os.environ.get("NEO4J_DATABASE")) as s:
@@ -1092,13 +1041,13 @@ async def graph():
                 "n.description AS sdesc, m.entity_id AS tname, "
                 "r.keywords AS rlabel, r.weight AS w"
             )
-            nodes = {}
-            links = []
+            live_nodes = {}
+            live_links = []
             seen = set()
             for rec in res:
                 sname = rec["sname"]
-                if sname and sname not in nodes:
-                    nodes[sname] = {
+                if sname and sname not in live_nodes:
+                    live_nodes[sname] = {
                         "id": sname,
                         "name": sname,
                         "type": rec["stype"] or "Unknown",
@@ -1106,13 +1055,13 @@ async def graph():
                     }
                 tname = rec["tname"]
                 if tname is not None:
-                    if tname not in nodes:
-                        nodes[tname] = {"id": tname, "name": tname, "type": "Unknown", "desc": ""}
+                    if tname not in live_nodes:
+                        live_nodes[tname] = {"id": tname, "name": tname, "type": "Unknown", "desc": ""}
                     if sname:
                         key = (sname, tname)
                         if key not in seen:
                             seen.add(key)
-                            links.append(
+                            live_links.append(
                                 {
                                     "source": sname,
                                     "target": tname,
@@ -1121,28 +1070,27 @@ async def graph():
                                 }
                             )
         driver.close()
-        async with profile_cache_lock:
-            payload = _load_profile_payload()
-        overlay_nodes, overlay_links = _schema_graph_overlay(payload.get("schema"))
-        for node in overlay_nodes:
-            if node["id"] not in nodes:
-                nodes[node["id"]] = node
+        for node in live_nodes.values():
+            nodes[node["id"]] = node
         existing = {(lk["source"], lk["target"], lk.get("label", "")) for lk in links}
-        for lk in overlay_links:
+        for lk in live_links:
             key = (lk["source"], lk["target"], lk.get("label", ""))
             if key not in existing:
                 existing.add(key)
                 links.append(lk)
 
-        type_counts = Counter((n.get("type") or "unknown").lower() for n in nodes.values())
-        return {
-            "nodes": list(nodes.values()),
-            "links": links,
-            "meta": {
-                "node_count": len(nodes),
-                "edge_count": len(links),
-                "type_counts": dict(type_counts),
-            },
-        }
+        warning = None
     except Exception as e:
-        return {"error": str(e), "nodes": [], "links": []}
+        warning = str(e)
+
+    type_counts = Counter((n.get("type") or "unknown").lower() for n in nodes.values())
+    return {
+        "nodes": list(nodes.values()),
+        "links": links,
+        "meta": {
+            "node_count": len(nodes),
+            "edge_count": len(links),
+            "type_counts": dict(type_counts),
+            "warning": warning,
+        },
+    }
