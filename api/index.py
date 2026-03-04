@@ -23,6 +23,7 @@ NEO4J_URI_BOLT = NEO4J_URI.replace("neo4j+s://", "bolt+s://").replace("neo4j://"
 
 # Sync env vars for drivers that read them directly
 os.environ["NEO4J_URL"]      = NEO4J_URI_BOLT
+os.environ["NEO4J_URI"]      = NEO4J_URI_BOLT  # neo4j_impl reads this
 os.environ["NEO4J_USERNAME"] = NEO4J_USER
 os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
 # Aura free tier only has a database called "neo4j" — LightRAG auto-generates
@@ -194,25 +195,28 @@ async def graph():
     from neo4j import GraphDatabase
     try:
         driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
-        with driver.session() as s:
+        with driver.session(database="neo4j") as s:
             res = s.run(
-                "MATCH (n) WITH n LIMIT 150 "
-                "OPTIONAL MATCH (n)-[r]->(m) "
-                "RETURN id(n) AS sid, n.id AS sname, n.entity_type AS stype, "
-                "n.description AS sdesc, id(m) AS tid, m.id AS tname, "
+                "MATCH (n:base) WITH n LIMIT 150 "
+                "OPTIONAL MATCH (n)-[r]->(m:base) "
+                "RETURN n.entity_id AS sname, n.entity_type AS stype, "
+                "n.description AS sdesc, m.entity_id AS tname, "
                 "r.keywords AS rlabel, r.weight AS w"
             )
             nodes, links, seen = {}, [], set()
             for rec in res:
-                if rec["sid"] not in nodes:
-                    nodes[rec["sid"]] = {"id": rec["sid"], "name": rec["sname"] or f"node_{rec['sid']}", "type": rec["stype"] or "Unknown", "desc": rec["sdesc"] or ""}
-                if rec["tid"] is not None:
-                    if rec["tid"] not in nodes:
-                        nodes[rec["tid"]] = {"id": rec["tid"], "name": rec["tname"] or f"node_{rec['tid']}", "type": "Unknown", "desc": ""}
-                    key = (rec["sid"], rec["tid"])
-                    if key not in seen:
-                        seen.add(key)
-                        links.append({"source": rec["sid"], "target": rec["tid"], "label": (rec["rlabel"] or "").split(",")[0], "weight": float(rec["w"] or 1)})
+                sname = rec["sname"]
+                if sname and sname not in nodes:
+                    nodes[sname] = {"id": sname, "name": sname, "type": rec["stype"] or "Unknown", "desc": rec["sdesc"] or ""}
+                tname = rec["tname"]
+                if tname is not None:
+                    if tname not in nodes:
+                        nodes[tname] = {"id": tname, "name": tname, "type": "Unknown", "desc": ""}
+                    if sname:
+                        key = (sname, tname)
+                        if key not in seen:
+                            seen.add(key)
+                            links.append({"source": sname, "target": tname, "label": (rec["rlabel"] or "").split(",")[0], "weight": float(rec["w"] or 1)})
         driver.close()
         return {"nodes": list(nodes.values()), "links": links}
     except Exception as e:
