@@ -12,6 +12,7 @@ load_dotenv()
 
 NVIDIA_API_KEY  = os.environ.get("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+NVIDIA_CHAT_MODEL = os.environ.get("NVIDIA_CHAT_MODEL", "meta/llama-3.1-8b-instruct")
 NEO4J_URI       = os.environ.get("NEO4J_URI", "")
 NEO4J_USER      = os.environ.get("NEO4J_USER") or os.environ.get("NEO4J_USERNAME", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
@@ -81,15 +82,18 @@ from lightrag.llm.openai import openai_complete_if_cache, openai_embed
 from lightrag.utils import EmbeddingFunc
 
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
+    llm_max_tokens = kwargs.pop("max_tokens", 1024)
+    llm_temperature = kwargs.pop("temperature", 0.2)
+    llm_top_p = kwargs.pop("top_p", 0.9)
     kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
-        "z-ai/glm5", prompt,
+        NVIDIA_CHAT_MODEL, prompt,
         system_prompt=system_prompt,
         history_messages=history_messages or [],
         api_key=NVIDIA_API_KEY,
         base_url=NVIDIA_BASE_URL,
-        temperature=1, top_p=1, max_tokens=16384,
-        openai_client_configs={"timeout": 600.0},
+        temperature=llm_temperature, top_p=llm_top_p, max_tokens=llm_max_tokens,
+        openai_client_configs={"timeout": 45.0},
         **kwargs,
     )
 
@@ -109,29 +113,33 @@ async def nvidia_embed(texts):
 
 # ── RAG singleton ───────────────────────────────────────────────────
 rag = None
+rag_init_lock = asyncio.Lock()
 
 async def get_rag():
     global rag
     if rag is None:
-        rag = LightRAG(
-            working_dir=WORKING_DIR,
-            chunk_token_size=256,  # nv-embedqa-e5-v5 max is 512 tokens
-            llm_model_func=nvidia_llm,
-            embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=512, func=nvidia_embed),
-            graph_storage="Neo4JStorage",
-            vector_storage="PGVectorStorage",
-            kv_storage="PGKVStorage",
-            doc_status_storage="PGDocStatusStorage",
-            addon_params={
-                "neo4j_url": NEO4J_URI_BOLT,
-                "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD),
-                "connection_string": SUPABASE_PG_URL,
-            },
-            vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
-        )
-        # Explicitly await storage initialization instead of letting it run
-        # as a fire-and-forget background task (which silently fails on Vercel)
-        await rag.initialize_storages()
+        async with rag_init_lock:
+            if rag is None:
+                instance = LightRAG(
+                    working_dir=WORKING_DIR,
+                    chunk_token_size=256,  # nv-embedqa-e5-v5 max is 512 tokens
+                    llm_model_func=nvidia_llm,
+                    embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=512, func=nvidia_embed),
+                    graph_storage="Neo4JStorage",
+                    vector_storage="PGVectorStorage",
+                    kv_storage="PGKVStorage",
+                    doc_status_storage="PGDocStatusStorage",
+                    addon_params={
+                        "neo4j_url": NEO4J_URI_BOLT,
+                        "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD),
+                        "connection_string": SUPABASE_PG_URL,
+                    },
+                    vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
+                )
+                # Explicitly await storage initialization instead of letting it run
+                # as a fire-and-forget background task (which silently fails on Vercel)
+                await instance.initialize_storages()
+                rag = instance
     return rag
 
 # ── FastAPI lifespan (critical for LightRAG shared storage) ─────────
@@ -178,23 +186,15 @@ async def init_pipeline():
         with open(data_path) as f:
             content = f.read()
 
-        # Force re-ingestion by clearing stale doc tracking rows.
-        # LightRAG writes the doc ID before processing — if a previous run
-        # crashed mid-way, the doc is "seen" but the graph is empty.
+        # Keep init within serverless limits.
         try:
-            db = r.doc_status.db
-            if db and db.pool:
-                async with db.pool.acquire() as conn:
-                    deleted = await conn.fetchval(
-                        "DELETE FROM LIGHTRAG_DOC_STATUS WHERE workspace=$1 RETURNING count(*)",
-                        db.workspace
-                    )
-                    print(f"Cleared {deleted} stale doc_status rows for workspace={db.workspace}")
-        except Exception as clear_err:
-            print(f"Note: Could not clear doc_status: {clear_err}")
-
-        await r.ainsert(content)
-        return {"status": "success", "message": "Data ingested into graph."}
+            await asyncio.wait_for(r.ainsert(content), timeout=55.0)
+            return {"status": "success", "message": "Data ingested into graph."}
+        except asyncio.TimeoutError:
+            return {
+                "status": "partial",
+                "message": "Ingestion timed out but may have partially completed. Retry /api/init once more.",
+            }
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -243,19 +243,38 @@ async def debug():
 async def ask(req: Q):
     try:
         r = await get_rag()
-        
+
+        async def _query_mode(mode: str, timeout_s: float):
+            try:
+                result = await asyncio.wait_for(
+                    r.aquery(req.question, param=QueryParam(mode=mode)),
+                    timeout=timeout_s,
+                )
+            except asyncio.TimeoutError:
+                return None
+            except AttributeError as e:
+                if "workspace" in str(e):
+                    return None
+                raise
+            text_result = str(result or "").strip()
+            if text_result and text_result.lower() not in ("none", ""):
+                return text_result
+            return None
+
         async def _run_query():
-            # Try hybrid first, fall back to local if keywords are empty
-            for mode in ["hybrid", "local", "global"]:
-                result = await r.aquery(req.question, param=QueryParam(mode=mode))
-                text_result = str(result or "").strip()
-                if text_result and text_result.lower() not in ("none", ""):
-                    return {"answer": text_result, "mode_used": mode}
-            return {"answer": "I could not find a specific answer. The knowledge graph may not be initialized — visit /api/init to load data.", "mode_used": "none"}
-        
-        # Timeout to prevent endless buffering on Vercel (max 60s on Hobby plan)
+            # Local is usually fastest/most stable, then hybrid, then global.
+            for mode, timeout_s in (("local", 15.0), ("hybrid", 25.0), ("global", 10.0)):
+                text = await _query_mode(mode, timeout_s)
+                if text:
+                    return {"answer": text, "mode_used": mode}
+            return {
+                "answer": "I could not find a specific answer. The knowledge graph may not be initialized - visit /api/init to load data.",
+                "mode_used": "none",
+            }
+
+        # Keep total request under serverless timeout ceilings.
         try:
-            return await asyncio.wait_for(_run_query(), timeout=50.0)
+            return await asyncio.wait_for(_run_query(), timeout=55.0)
         except asyncio.TimeoutError:
             return {"error": "Query timed out. Please try again in a few seconds.", "mode_used": "timeout"}
     except Exception as e:
