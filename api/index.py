@@ -170,16 +170,19 @@ async def init_pipeline():
         if os.path.exists(data_path):
             with open(data_path) as f:
                 content = f.read()
-            # Clear any previously-failed document status so it gets re-processed
+            # Force re-processing: clear ALL stale doc entries from previous failed runs.
+            # LightRAG's filter_keys() skips docs that exist in these tables, even if
+            # they failed to process. We must clear them to allow re-ingestion.
             try:
-                if r.doc_status and r.doc_status.db:
-                    await r.doc_status.db.execute(
-                        f"DELETE FROM LIGHTRAG_DOC_STATUS WHERE workspace=$1",
-                        {"workspace": r.doc_status.db.workspace}
-                    )
-                    print("Cleared old doc_status entries for re-processing")
+                db = r.doc_status.db
+                if db and db.pool:
+                    workspace = db.workspace
+                    async with db.pool.acquire() as conn:
+                        for table in ["LIGHTRAG_DOC_STATUS", "LIGHTRAG_DOC_FULL", "LIGHTRAG_DOC_CHUNKS"]:
+                            await conn.execute(f"DELETE FROM {table} WHERE workspace=$1", workspace)
+                    print(f"Cleared all doc tables for workspace={workspace}")
             except Exception as clear_err:
-                print(f"Note: Could not clear doc_status: {clear_err}")
+                print(f"Note: Could not clear doc tables: {clear_err}")
             await r.ainsert(content)
             return {"status": "success", "message": "Pipeline initialized and data ingested."}
         return {"status": "partial", "message": "Pipeline initialized but data file missing."}
