@@ -94,10 +94,18 @@ async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs
     )
 
 async def nvidia_embed(texts):
-    return await openai_embed(
-        texts, model="nvidia/nv-embedqa-e5-v5",
-        api_key=NVIDIA_API_KEY, base_url=NVIDIA_BASE_URL,
+    # NVIDIA's nv-embedqa-e5-v5 is an asymmetric model requiring 'input_type'
+    # LightRAG's openai_embed doesn't support extra_body, so we call directly
+    from openai import AsyncOpenAI
+    import numpy as np
+    client = AsyncOpenAI(api_key=NVIDIA_API_KEY, base_url=NVIDIA_BASE_URL)
+    response = await client.embeddings.create(
+        model="nvidia/nv-embedqa-e5-v5",
+        input=texts,
+        encoding_format="float",
+        extra_body={"input_type": "passage"},
     )
+    return np.array([dp.embedding for dp in response.data])
 
 # ── RAG singleton ───────────────────────────────────────────────────
 rag = None
