@@ -83,7 +83,7 @@ from lightrag.utils import EmbeddingFunc
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
     kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
-        "z-ai/glm5", prompt,
+        "meta/llama-3.1-8b-instruct", prompt,
         system_prompt=system_prompt,
         history_messages=history_messages or [],
         api_key=NVIDIA_API_KEY,
@@ -114,12 +114,13 @@ async def get_rag():
     if rag is None:
         rag = LightRAG(
             working_dir=WORKING_DIR,
-            chunk_token_size=500,  # nv-embedqa-e5-v5 max is 512 tokens
+            chunk_token_size=256,  # nv-embedqa-e5-v5 max is 512 tokens
             llm_model_func=nvidia_llm,
             embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=512, func=nvidia_embed),
             graph_storage="Neo4JStorage",
             vector_storage="PGVectorStorage",
             kv_storage="PGKVStorage",
+            doc_status_storage="PGDocStatusStorage",
             addon_params={
                 "neo4j_url": NEO4J_URI_BOLT,
                 "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD),
@@ -217,7 +218,7 @@ async def debug():
             
             # Check vectors
             try:
-                vecs = await conn.fetchval("SELECT COUNT(*) FROM LIGHTRAG_VEC_CHUNKS WHERE workspace=$1", db.workspace)
+                vecs = await conn.fetchval("SELECT COUNT(*) FROM LIGHTRAG_VDB_ENTITY WHERE workspace=$1", db.workspace)
                 out["vector_count"] = vecs
             except Exception as e:
                 out["vector_error"] = str(e)
