@@ -18,7 +18,8 @@ NEO4J_URI       = os.environ.get("NEO4J_URI", "")
 # Try both common names for the user variable
 NEO4J_USER      = os.environ.get("NEO4J_USERNAME") or os.environ.get("NEO4J_USER", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
-SUPABASE_PG_URL = os.environ.get("SUPABASE_PG_URL", "")
+# Next.js/Supabase integrations usually inject DATABASE_URL
+SUPABASE_PG_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_PG_URL", "")
 
 # Sync back to os.environ for drivers that check it directly
 os.environ["NEO4J_URL"] = NEO4J_URI
@@ -100,7 +101,7 @@ class Q(BaseModel):
 
 @app.get("/api/ping")
 def ping():
-    return {"status": "alive", "version": "1.6", "neo4j_user": NEO4J_USER}
+    return {"status": "alive", "version": "1.7", "neo4j_user": NEO4J_USER}
 
 @app.get("/api/init")
 async def init_pipeline():
@@ -109,7 +110,10 @@ async def init_pipeline():
         data_path = os.path.join(os.path.dirname(__file__), "satvik_data.txt")
         if os.path.exists(data_path):
             with open(data_path) as f:
-                await r.ainsert(f.read())
+                content = f.read()
+                # On serverless, we must fully await the insert so it completes before Vercel shuts us down
+                # Also we use a custom method or just normal ainsert
+                await r.ainsert(content)
             return {"status": "success", "message": "Pipeline initialized and data ingested."}
         return {"status": "partial", "message": "Pipeline initialized but data file missing."}
     except Exception as e:
