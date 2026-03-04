@@ -25,6 +25,9 @@ NEO4J_URI_BOLT = NEO4J_URI.replace("neo4j+s://", "bolt+s://").replace("neo4j://"
 os.environ["NEO4J_URL"]      = NEO4J_URI_BOLT
 os.environ["NEO4J_USERNAME"] = NEO4J_USER
 os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
+# Aura free tier only has a database called "neo4j" — LightRAG auto-generates
+# a name from the namespace (e.g. "chunk-entity-relation") which doesn't exist.
+os.environ["NEO4J_DATABASE"] = "neo4j"
 
 # ── Parse PG URL → individual env vars for LightRAG's ClientManager ─
 if SUPABASE_PG_URL:
