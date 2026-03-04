@@ -196,9 +196,9 @@ async def init_pipeline():
             print(f"Note: Could not clear doc_status: {clear_err}")
 
         # Insert with timeout handling for serverless environments
-        # Vercel serverless can timeout at 60s (hobby) or 120s (pro)
+        # Vercel Hobby plan max is 60s, so we use 55s to leave room for overhead
         try:
-            await asyncio.wait_for(r.ainsert(content), timeout=110.0)
+            await asyncio.wait_for(r.ainsert(content), timeout=55.0)
             return {"status": "success", "message": "Data ingested into graph."}
         except asyncio.TimeoutError:
             # Even if timeout, data may have been partially ingested
@@ -280,9 +280,9 @@ async def ask(req: Q):
             }
 
         # Hard cap the end‑to‑end latency to avoid endless buffering on Vercel
-        # Vercel timeout limits: Hobby 60s, Pro 120s, Enterprise 900s
+        # Vercel Hobby plan max is 60s, so we use 50s to leave room for overhead
         try:
-            return await asyncio.wait_for(_run_query(), timeout=55.0)
+            return await asyncio.wait_for(_run_query(), timeout=50.0)
         except asyncio.TimeoutError:
             return {
                 "error": "The query timed out. The knowledge graph may be loading or the query is too complex. Please try again.",
