@@ -89,7 +89,6 @@ async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs
         api_key=NVIDIA_API_KEY,
         base_url=NVIDIA_BASE_URL,
         temperature=1, top_p=1, max_tokens=16384,
-        extra_body={"chat_template_kwargs": {"enable_thinking": True, "clear_thinking": False}},
         **kwargs,
     )
 
@@ -170,7 +169,18 @@ async def init_pipeline():
         data_path = os.path.join(os.path.dirname(__file__), "satvik_data.txt")
         if os.path.exists(data_path):
             with open(data_path) as f:
-                await r.ainsert(f.read())
+                content = f.read()
+            # Clear any previously-failed document status so it gets re-processed
+            try:
+                if r.doc_status and r.doc_status.db:
+                    await r.doc_status.db.execute(
+                        f"DELETE FROM LIGHTRAG_DOC_STATUS WHERE workspace=$1",
+                        {"workspace": r.doc_status.db.workspace}
+                    )
+                    print("Cleared old doc_status entries for re-processing")
+            except Exception as clear_err:
+                print(f"Note: Could not clear doc_status: {clear_err}")
+            await r.ainsert(content)
             return {"status": "success", "message": "Pipeline initialized and data ingested."}
         return {"status": "partial", "message": "Pipeline initialized but data file missing."}
     except Exception as e:
