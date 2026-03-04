@@ -142,7 +142,8 @@ async def lifespan(app):
     )
     initialize_share_data(workers=1)
     await initialize_pipeline_status()
-    await get_rag()  # pre-warm the RAG singleton
+    # Do NOT pre-warm get_rag() here — it's too slow for Vercel cold starts.
+    # It will initialize lazily on the first /api/ask or /api/init request.
     yield
     finalize_share_data()
 
@@ -169,12 +170,29 @@ async def init_pipeline():
     try:
         r = await get_rag()
         data_path = os.path.join(os.path.dirname(__file__), "satvik_data.txt")
-        if os.path.exists(data_path):
-            with open(data_path) as f:
-                content = f.read()
-            await r.ainsert(content)
-            return {"status": "success", "message": "Pipeline initialized and data ingested."}
-        return {"status": "partial", "message": "Pipeline initialized but data file missing."}
+        if not os.path.exists(data_path):
+            return {"status": "partial", "message": "Data file missing."}
+
+        with open(data_path) as f:
+            content = f.read()
+
+        # Force re-ingestion by clearing stale doc tracking rows.
+        # LightRAG writes the doc ID before processing — if a previous run
+        # crashed mid-way, the doc is "seen" but the graph is empty.
+        try:
+            db = r.doc_status.db
+            if db and db.pool:
+                async with db.pool.acquire() as conn:
+                    deleted = await conn.fetchval(
+                        "DELETE FROM LIGHTRAG_DOC_STATUS WHERE workspace=$1 RETURNING count(*)",
+                        db.workspace
+                    )
+                    print(f"Cleared {deleted} stale doc_status rows for workspace={db.workspace}")
+        except Exception as clear_err:
+            print(f"Note: Could not clear doc_status: {clear_err}")
+
+        await r.ainsert(content)
+        return {"status": "success", "message": "Data ingested into graph."}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -184,14 +202,21 @@ async def init_pipeline():
 async def ask(req: Q):
     try:
         r = await get_rag()
-        query_mode = req.mode if req.mode in ["local", "global", "hybrid"] else "local"
-        result = await r.aquery(req.question, param=QueryParam(mode=query_mode))
-        text_result = str(result or "").strip()
-        if not text_result:
-            text_result = "I could not find a specific answer. Make sure /api/init has been run."
-        return {"answer": text_result}
+        # Try hybrid first, fall back to local if keywords are empty
+        for mode in ["hybrid", "local", "global"]:
+            result = await r.aquery(req.question, param=QueryParam(mode=mode))
+            text_result = str(result or "").strip()
+            if text_result and text_result.lower() not in ("none", ""):
+                return {"answer": text_result, "mode_used": mode}
+        return {"answer": "I could not find a specific answer. The knowledge graph may not be initialized — visit /api/init to load data.", "mode_used": "none"}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"error": str(e)}
+        
+@app.get("/api/ask")
+async def ask_get():
+    return {"error": "Use POST /api/ask with JSON body: {\"question\": \"...\", \"mode\": \"hybrid\"}"}
 
 @app.get("/api/graph")
 async def graph():
