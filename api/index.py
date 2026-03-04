@@ -83,14 +83,12 @@ from lightrag.utils import EmbeddingFunc
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
     kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
-        "z-ai/glm5", prompt,
+        "z-ai/glm-4", prompt,
         system_prompt=system_prompt,
         history_messages=history_messages or [],
         api_key=NVIDIA_API_KEY,
         base_url=NVIDIA_BASE_URL,
         temperature=1, top_p=1, max_tokens=16384,
-        # Keep a conservative timeout so Vercel doesn't kill the request.
-        # LightRAG will still cache successful responses.
         openai_client_configs={"timeout": 30.0},
         **kwargs,
     )
@@ -195,21 +193,12 @@ async def init_pipeline():
         except Exception as clear_err:
             print(f"Note: Could not clear doc_status: {clear_err}")
 
-        # Insert with timeout handling for serverless environments
-        # Vercel Hobby plan max is 60s, so we use 55s to leave room for overhead
+        # Add timeout for serverless (Vercel Hobby max 60s)
         try:
             await asyncio.wait_for(r.ainsert(content), timeout=55.0)
             return {"status": "success", "message": "Data ingested into graph."}
         except asyncio.TimeoutError:
-            # Even if timeout, data may have been partially ingested
-            # Return partial success so user can retry
-            return {
-                "status": "partial", 
-                "message": "Ingestion timed out but may have partially completed. Please visit /api/init again to finish, or try /api/ask to test.",
-            }
-        except Exception as insert_err:
-            print(f"Ingestion error: {insert_err}")
-            return {"status": "error", "message": str(insert_err)}
+            return {"status": "partial", "message": "Ingestion timed out. Please visit /api/init again to complete."}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -259,35 +248,20 @@ async def ask(req: Q):
     try:
         r = await get_rag()
         
-        # Run the query with an overall timeout so requests don't hang forever
         async def _run_query():
-            # Use only hybrid mode for fastest response
-            # Hybrid combines knowledge graph + vector search
-            result = await r.aquery(req.question, param=QueryParam(mode="hybrid"))
-            text_result = str(result or "").strip()
-            if text_result and text_result.lower() not in ("none", "", "no relevant information found"):
-                return {"answer": text_result, "mode_used": "hybrid"}
-            
-            # If hybrid returns nothing, try local mode as fallback
-            result = await r.aquery(req.question, param=QueryParam(mode="local"))
-            text_result = str(result or "").strip()
-            if text_result and text_result.lower() not in ("none", "", "no relevant information found"):
-                return {"answer": text_result, "mode_used": "local"}
-            
-            return {
-                "answer": "I could not find a specific answer in Satvik's knowledge base. Try asking about his work experience, projects, skills, or education.",
-                "mode_used": "none",
-            }
-
-        # Hard cap the end‑to‑end latency to avoid endless buffering on Vercel
-        # Vercel Hobby plan max is 60s, so we use 50s to leave room for overhead
+            # Try hybrid first, fall back to local if empty
+            for mode in ["hybrid", "local"]:
+                result = await r.aquery(req.question, param=QueryParam(mode=mode))
+                text_result = str(result or "").strip()
+                if text_result and text_result.lower() not in ("none", ""):
+                    return {"answer": text_result, "mode_used": mode}
+            return {"answer": "I could not find a specific answer. Try asking about Satvik's work experience, projects, skills, or education.", "mode_used": "none"}
+        
+        # Timeout to prevent endless buffering on Vercel (Hobby max 60s)
         try:
             return await asyncio.wait_for(_run_query(), timeout=50.0)
         except asyncio.TimeoutError:
-            return {
-                "error": "The query timed out. The knowledge graph may be loading or the query is too complex. Please try again.",
-                "mode_used": "timeout",
-            }
+            return {"error": "Query timed out. Please try again.", "mode_used": "timeout"}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -303,13 +277,9 @@ async def graph():
     try:
         driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session(database=os.environ.get("NEO4J_DATABASE")) as s:
-            # Optimized query: limit nodes first, then fetch their relationships
-            # This is much faster than fetching all relationships and limiting after
             res = s.run(
-                "MATCH (n:base) "
-                "WITH n ORDER BY n.entity_id LIMIT 150 "
+                "MATCH (n:base) WITH n LIMIT 150 "
                 "OPTIONAL MATCH (n)-[r]->(m:base) "
-                "WHERE m.entity_id IS NOT NULL "
                 "RETURN n.entity_id AS sname, n.entity_type AS stype, "
                 "n.description AS sdesc, m.entity_id AS tname, "
                 "r.keywords AS rlabel, r.weight AS w"
@@ -320,14 +290,14 @@ async def graph():
                 if sname and sname not in nodes:
                     nodes[sname] = {"id": sname, "name": sname, "type": rec["stype"] or "Unknown", "desc": rec["sdesc"] or ""}
                 tname = rec["tname"]
-                if tname is not None and tname != "":
+                if tname is not None:
                     if tname not in nodes:
                         nodes[tname] = {"id": tname, "name": tname, "type": "Unknown", "desc": ""}
-                    if sname and sname != "":
+                    if sname:
                         key = (sname, tname)
                         if key not in seen:
                             seen.add(key)
-                            links.append({"source": sname, "target": tname, "label": (rec["rlabel"] or "").split(",")[0] if rec["rlabel"] else "", "weight": float(rec["w"] or 1)})
+                            links.append({"source": sname, "target": tname, "label": (rec["rlabel"] or "").split(",")[0], "weight": float(rec["w"] or 1)})
         driver.close()
         return {"nodes": list(nodes.values()), "links": links}
     except Exception as e:
