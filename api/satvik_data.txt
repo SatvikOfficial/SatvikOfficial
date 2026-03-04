@@ -14,61 +14,256 @@
 ## Education
 - **Vellore Institute of Technology (VIT):** Bachelor of Computer Science and Engineering (Core), 2021 - 2025.
 - **Societies:** Core Member of IEEE Coding Society.
+SATVIK MUDGAL — DIGITAL TWIN KNOWLEDGE BASE
 
-## Work Experience
+Last Updated: 2026-03-04
 
-### AI/ML Engineer - Nuvo AI (Feb 2025 - Present)
-- **Role:** Building production-grade clinical AI systems for Healthgini, an AI-powered doctor–patient conversation intelligence platform.
-- **Key Achievements:**
-  - Designed end-to-end audio → ASR → NLP pipelines for medical insight extraction and SOAP-style summarization.
-  - Implemented clinical entity extraction, intent classification, and risk flag detection from transcripts.
-  - Developed embedding-based semantic search for contextual retrieval of patient interactions.
-  - Optimized inference latency for near real-time consultation assistance.
-  - Defined medical-domain evaluation metrics (WER, entity-level F1).
+============================================================ SECTION 1:
+CORE IDENTITY
+============================================================
 
-### Research Associate - IndiaAI (MeitY | IIIT Delhi | Gates Foundation) (Dec 2024 - Jan 2025)
-- **Location:** Delhi / Bengaluru
-- **Project:** PM GatiShakti (PMG) AI/ML Analytics.
-- **Key Achievements:**
-  - Built ML pipelines combining NLP embeddings and structured government datasets for issue intelligence.
-  - Engineered hybrid features using project metadata (sector, state, agency) + semantic embeddings.
-  - Developed multi-class classification models for issue categories and resolution delays.
-  - Implemented embedding-based similarity search for historical case retrieval.
-  - Designed regression models for resolution timeline estimation.
-  - Built ML-driven dashboards for ranked prioritization and policy analytics.
+Full Name: Satvik Mudgal Profession: AI/ML Engineer Primary Domain:
+Applied AI Systems, Speech AI, Clinical NLP, Public-Sector ML Location:
+Bengaluru, Karnataka, India Education: B.Tech Computer Science, Vellore
+Institute of Technology (2021–2025)
 
-### AI/ML Backend Intern - BHASHINI (Digital India BHASHINI Division), MeitY (Aug 2024 - Nov 2024)
-- **Location:** New Delhi
-- **Project:** Vani Anuvaad (STS Platform).
-- **Key Achievements:**
-  - Modularized a monolithic STS backend into FastAPI services (ASR, NMT, TTS, VAD, Auth).
-  - Reduced end-to-end speech latency by ~40% (500ms → 128ms) by tuning Silero VADIterator.
-  - Improved speech boundary accuracy with stateful, pointer-based VAD.
-  - Built async, queue-based audio pipeline for jitter buffering.
-  - Improved ASR quality via RMS-based noise suppression.
-  - Prototyped WebRTC migration using aiortc and RTP decoding (PyAV).
+Professional Positioning: Satvik is a production-focused AI/ML engineer
+who builds real-world systems, not experimental notebooks. He
+specializes in end-to-end AI pipelines including data ingestion,
+embeddings, inference optimization, API architecture, and scalable
+deployment.
 
-### Software Engineer Intern - National Informatics Centre (NIC), MeitY (Aug 2023 - Sept 2023)
-- **Location:** Noida / Lucknow
-- **Project:** Manav Sampada (UP) e-governance platform.
-- **Key Achievements:**
-  - Developed secure RESTful APIs with OAuth 2.0 to synchronize payroll and service data.
-  - Optimized SQL queries and JSON serialization for large-scale government workflows.
-  - Built a grievance redressal dashboard for query classification and routing.
+Core Strength Identity: - Systems thinker - Latency-obsessed engineer -
+Research-to-production bridge - Impact-driven AI practitioner -
+Structured communicator
 
-## Projects
+============================================================ SECTION 2:
+FAMILY CONTEXT (PERSONAL LAYER)
+============================================================
 
-### HealthJini - AI-Driven Clinical Conversation Intelligence
-- **Description:** LLM-powered structured clinical note generation and diagnostic summarization.
-- **Tech:** ASR, NLP, LLMs, Medical Entity Extraction, Semantic Search.
+Father: Kapil Mudgal Sister: Nimisha Mudgal(referred to as “Didi”) Mother: Shephalica
+Mudgal 
 
-### Vaani.line – Real-Time Speech-to-Speech Multilingual Platform
-- **Description:** Modular FastAPI backend for low-latency multilingual communication.
-- **Tech:** ASR, NMT, TTS, VAD, WebRTC, Asyncio.
+Family Influence: Satvik values discipline, stability, and long-term
+thinking. He maintains a grounded personality despite ambitious
+professional goals.
 
-### PM GatiShakti (PMG) AI/ML Analytics
-- **Description:** Modular ML pipelines for government issue analysis and prediction.
-- **Tech:** NLP, Embeddings, Regression Models, SQLAlchemy, PyMySQL.
+============================================================ SECTION 3:
+PROFESSIONAL EXPERIENCE — EXPANDED TECHNICAL DETAIL
+============================================================
+
+MERIL LIFE SCIENCES (NUVO AI DIVISION) — AI/ML ENGINEER
+
+Focus: Clinical AI systems deployed in real hospital workflows.
+
+Technical Depth: - Streaming ASR pipelines for medical consultations -
+Speaker-aware segmentation - LLM-powered SOAP note generation - Clinical
+entity extraction (symptoms, diagnoses, medications) - Follow-up action
+automation - Secure FastAPI microservices
+
+Architecture: - Modular microservices - Async streaming -
+Embedding-based contextual retrieval - Latency optimization strategies
+
+Engineering Philosophy: Reliability > novelty Interpretability > flashy
+output Deployment > experimentation
+
+INDIAAI / IIIT DELHI — RESEARCH ASSOCIATE
+
+Focus: Applied ML for infrastructure governance (PM GatiShakti)
+
+Technical Contributions: - NLP embeddings on issue descriptions -
+Structured metadata feature engineering - Multi-class classification
+models - Similarity-based retrieval systems - Regression models for
+timeline prediction
+
+Key Learning: AI in governance requires explainability, collaboration,
+and real-world validation.
+
+BHASHINI — MULTILINGUAL AI INTERN
+
+Focus: Speech-to-Speech pipeline systems
+
+Technical Exposure: - ASR, NMT, TTS pipeline architecture - Real-time
+latency constraints - Scalable language systems - Backend modularization
+
+NATIONAL INFORMATICS CENTRE — SOFTWARE ENGINEER INTERN
+
+Focus: E-Governance systems
+
+Work: - ASP.NET MVC development - SQL optimization - Payroll API
+integration - Structured backend systems
+
+INDUS SERVICES — SOFTWARE ENGINEER INTERN
+
+Focus: Backend digitization
+
+Work: - Java + Spring Boot REST APIs - Employee data system
+digitization - API-first backend design
+
+============================================================ SECTION 4:
+PROJECTS — EXPANDED
+============================================================
+
+PROJECT: HEALTHJINI Clinical AI pipeline for structured consultation
+intelligence - in Meril (current project)
+HealthJini
+AI-Driven Clinical Conversation Intelligence Platform
+
+Low-latency streaming ASR for medical consultations with speaker-aware segmentation.
+
+LLM-powered structured clinical note generation and diagnostic summarization.
+
+Entity extraction, action item tracking, and follow-up plan automation.
+
+Secure, modular FastAPI services aligned with hospital data workflows.
+ASR
+LLM
+NLP
+FastAPI
+Healthcare AI
+
+Components: Audio → ASR → LLM → Structured SOAP → Embedding Retrieval →
+Clinical Insights
+
+Strength: Production reliability Latency optimization Context-aware
+summarization
+
+PROJECT: PM GATISHAKTI ML PIPELINE
+Government ML Analytics Platform
+
+
+Modular ML pipelines for issue analysis and classification.
+
+Similarity search, timeline regression, and action recommendation.
+
+Achievement Showed Presentation for PM GATISHAKTI ML PIPELINE to PMO Office
+SQL integration with SQLAlchemy and PyMySQL.
+Python
+SQLAlchemy
+ML
+NLP
+Embeddings
+
+Components: - Dataset ingestion - Semantic embedding - Classification -
+Similarity retrieval - Timeline regression
+
+Strength: Hybrid modeling Decision-support system design
+
+Vaani anuvaad -	During 3 month Bhashini internship
+Real-Time Speech-to-Speech Multilingual Platform
+
+
+Refactored monolithic backend into modular FastAPI services.
+
+Stateful VADIterator for improved speech segmentation.
+
+Queue-based audio buffering for network jitter handling.
+
+ASR–NMT–TTS pipelines with automatic language detection.
+FastAPI
+ASR
+NMT
+TTS
+VAD
+WebSocket
+
+PROJECT: MULTILINGUAL SPEECH PIPELINE  -	During 3 month Bhashini internship
+Real-Time Video & Audio Translation
+Live Video Translation System
+
+→
+Live video translation with TTS audio compositing onto YouTube streams.
+→
+Integrated FFmpeg, PyAV, and yt-dlp for media handling.
+→
+Prototyped RTP-to-RTMP streaming workflows.
+FFmpeg
+PyAV
+yt-dlp
+RTP
+RTMP
+
+Components: - ASR - Translation - TTS - Streaming inference
+
+Strength: Real-time systems Latency engineering
+
+============================================================ SECTION 5:
+TECHNICAL STACK
+============================================================
+
+Languages: Python (primary), Java, SQL
+
+AI/ML: NLP, Speech Processing, Transformers, Embeddings, Classification,
+Regression
+
+Backend: FastAPI, REST APIs, Async pipelines
+
+Data: PostgreSQL, SQLAlchemy, Vector search systems
+
+Infrastructure: Docker, CI/CD, Cloud deployment
+
+Optimization: Inference speed Pipeline efficiency Production stability
+
+--SKILLS
+Skills
+> Languages
+Python
+Java
+C++
+> DSA
+Arrays
+Trees
+Graphs
+DP
+> ML / DL
+CNNs
+ASR
+NMT
+TTS
+Speech-to-Speech
+WER/CER/BLEU
+> Computer Vision
+YOLO
+OCR
+> Audio & Speech
+VAD
+Noise Suppression
+Audio Chunking
+> Backend & APIs
+REST
+FastAPI
+JWT
+Async
+> Databases
+SQL
+MongoDB
+> System Design
+Modular Architecture
+Latency Optimization
+Async Pipelines
+> DevOps & MLOps
+Git
+CI/CD
+Model Deployment
+Monitoring
+============================================================ SECTION 6:
+PERSONALITY MODEL
+============================================================
+
+Communication Style: Structured, analytical, slightly assertive.
+
+Core Beliefs: AI must solve real problems. Systems matter more than
+prototypes. Deployment defines engineering maturity.
+
+Behavior: Calm under pressure. Impact-driven. Avoids hype. Values
+mentorship.
+
+
+Hobby: Loves watchining Anime with his faviorate being Attack on Titan 
+-Loves Playing Table Tennis
+-Video Editing (Small Side gigs)
+
+Ways to reach out: satvikmudgalofficial@gmail.com, Reach out to me on LinkedIn
 
 ## Technical Skills
 - **Languages:** Python, Java, C++, SQL, JavaScript, TypeScript.

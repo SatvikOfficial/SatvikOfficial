@@ -454,6 +454,8 @@ const API = '/api';
 let busy = false;
 let pipelineReady = false;
 let readinessTimer = null;
+let warmupTicker = null;
+let warmupPulse = 6;
 let graphLoaded = false;
 
 let svgZoom = null;
@@ -536,6 +538,14 @@ function renderPipelineState(state) {
     headDot.classList.add('ready');
     headDot.classList.remove('error');
     headStatus.textContent = 'Pipeline ready';
+    if (readinessTimer) {
+      clearInterval(readinessTimer);
+      readinessTimer = null;
+    }
+    if (warmupTicker) {
+      clearInterval(warmupTicker);
+      warmupTicker = null;
+    }
     setComposerEnabled(true);
     setTimeout(() => { card.style.display = 'none'; }, 1400);
     return;
@@ -559,6 +569,26 @@ function renderPipelineState(state) {
   }
 }
 
+function startWarmupTicker() {
+  if (warmupTicker) clearInterval(warmupTicker);
+  warmupTicker = setInterval(() => {
+    if (pipelineReady) return;
+    warmupPulse = Math.min(93, warmupPulse + (warmupPulse < 45 ? 4 : 2));
+    renderPipelineState({
+      status: 'warming',
+      message: 'Initializing retrieval + knowledge graph...',
+      progress: warmupPulse,
+    });
+  }, 1200);
+}
+
+function stopWarmupTicker() {
+  if (warmupTicker) {
+    clearInterval(warmupTicker);
+    warmupTicker = null;
+  }
+}
+
 async function refreshReadiness() {
   try {
     const res = await fetch(`${API}/readiness`, { cache: 'no-store' });
@@ -567,6 +597,39 @@ async function refreshReadiness() {
     renderPipelineState(state);
   } catch (err) {
     renderPipelineState({ status: 'error', message: `Readiness check failed: ${err.message}`, progress: 100 });
+  }
+}
+
+async function initPipeline(force = false) {
+  pipelineReady = false;
+  warmupPulse = 8;
+  renderPipelineState({
+    status: 'warming',
+    message: 'Booting RAG pipeline...',
+    progress: warmupPulse,
+  });
+  startWarmupTicker();
+
+  try {
+    const url = force ? `${API}/init?force=true` : `${API}/init`;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const state = await res.json();
+    renderPipelineState(state);
+  } catch (err) {
+    renderPipelineState({
+      status: 'error',
+      message: `Init failed: ${err.message}`,
+      progress: 100,
+    });
+    if (!readinessTimer) {
+      readinessTimer = setInterval(async () => {
+        if (pipelineReady) return;
+        await refreshReadiness();
+      }, 12000);
+    }
+  } finally {
+    if (pipelineReady) stopWarmupTicker();
   }
 }
 
@@ -583,9 +646,9 @@ async function sendMsg() {
   if (!question) return;
 
   if (!pipelineReady) {
-    addMsg('bot', 'I am still warming up the RAG pipeline. Give me a few seconds and try again.');
-    await refreshReadiness();
-    return;
+    addMsg('bot', 'I am still initializing my retrieval pipeline. I will finish setup first, then answer.');
+    await initPipeline(false);
+    if (!pipelineReady) return;
   }
 
   addMsg('user', question);
@@ -802,8 +865,13 @@ function focusNode() {
 }
 
 async function boot() {
-  await refreshReadiness();
-  readinessTimer = setInterval(refreshReadiness, 2500);
+  await initPipeline(false);
+  if (!pipelineReady && !readinessTimer) {
+    readinessTimer = setInterval(async () => {
+      if (pipelineReady) return;
+      await refreshReadiness();
+    }, 12000);
+  }
 }
 
 window.addEventListener('load', boot);
