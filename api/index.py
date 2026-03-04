@@ -83,13 +83,13 @@ from lightrag.utils import EmbeddingFunc
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
     kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
-        "z-ai/glm-4", prompt,
+        "z-ai/glm5", prompt,
         system_prompt=system_prompt,
         history_messages=history_messages or [],
         api_key=NVIDIA_API_KEY,
         base_url=NVIDIA_BASE_URL,
         temperature=1, top_p=1, max_tokens=16384,
-        openai_client_configs={"timeout": 30.0},
+        openai_client_configs={"timeout": 600.0},
         **kwargs,
     )
 
@@ -193,12 +193,8 @@ async def init_pipeline():
         except Exception as clear_err:
             print(f"Note: Could not clear doc_status: {clear_err}")
 
-        # Add timeout for serverless (Vercel Hobby max 60s)
-        try:
-            await asyncio.wait_for(r.ainsert(content), timeout=55.0)
-            return {"status": "success", "message": "Data ingested into graph."}
-        except asyncio.TimeoutError:
-            return {"status": "partial", "message": "Ingestion timed out. Please visit /api/init again to complete."}
+        await r.ainsert(content)
+        return {"status": "success", "message": "Data ingested into graph."}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -249,19 +245,19 @@ async def ask(req: Q):
         r = await get_rag()
         
         async def _run_query():
-            # Try hybrid first, fall back to local if empty
-            for mode in ["hybrid", "local"]:
+            # Try hybrid first, fall back to local if keywords are empty
+            for mode in ["hybrid", "local", "global"]:
                 result = await r.aquery(req.question, param=QueryParam(mode=mode))
                 text_result = str(result or "").strip()
                 if text_result and text_result.lower() not in ("none", ""):
                     return {"answer": text_result, "mode_used": mode}
-            return {"answer": "I could not find a specific answer. Try asking about Satvik's work experience, projects, skills, or education.", "mode_used": "none"}
+            return {"answer": "I could not find a specific answer. The knowledge graph may not be initialized — visit /api/init to load data.", "mode_used": "none"}
         
-        # Timeout to prevent endless buffering on Vercel (Hobby max 60s)
+        # Timeout to prevent endless buffering on Vercel (max 60s on Hobby plan)
         try:
             return await asyncio.wait_for(_run_query(), timeout=50.0)
         except asyncio.TimeoutError:
-            return {"error": "Query timed out. Please try again.", "mode_used": "timeout"}
+            return {"error": "Query timed out. Please try again in a few seconds.", "mode_used": "timeout"}
     except Exception as e:
         import traceback
         traceback.print_exc()
