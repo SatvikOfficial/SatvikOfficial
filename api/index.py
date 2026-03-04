@@ -6,9 +6,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from lightrag import LightRAG, QueryParam
-from lightrag.llm.openai import openai_complete_if_cache, openai_embed
-from lightrag.utils import EmbeddingFunc
 
 # ── Load environment ────────────────────────────────────────────────
 load_dotenv()
@@ -18,12 +15,14 @@ NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 NEO4J_URI       = os.environ.get("NEO4J_URI", "")
 NEO4J_USER      = os.environ.get("NEO4J_USERNAME") or os.environ.get("NEO4J_USER", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
-
-# Prefer DATABASE_URL (Vercel pooler) over SUPABASE_PG_URL (legacy direct)
 SUPABASE_PG_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_PG_URL", "")
 
+# Convert neo4j+s:// → bolt+s:// to avoid routing-table lookup
+# (Vercel serverless can't do routing discovery: "Unable to retrieve routing information")
+NEO4J_URI_BOLT = NEO4J_URI.replace("neo4j+s://", "bolt+s://").replace("neo4j://", "bolt://")
+
 # Sync env vars for drivers that read them directly
-os.environ["NEO4J_URL"]      = NEO4J_URI
+os.environ["NEO4J_URL"]      = NEO4J_URI_BOLT
 os.environ["NEO4J_USERNAME"] = NEO4J_USER
 os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
 
@@ -42,9 +41,41 @@ if SUPABASE_PG_URL:
 WORKING_DIR = "/tmp/lightrag_cache"
 os.makedirs(WORKING_DIR, exist_ok=True)
 
+# ── MONKEY-PATCH: Make asyncpg work with PgBouncer (Supavisor) ──────
+# PgBouncer in transaction-pooling mode does NOT support prepared statements.
+# asyncpg uses prepared statements by default, causing silent connection failures.
+# We patch PostgreSQLDB.initdb to add statement_cache_size=0.
+import asyncpg
+from lightrag.kg.postgres_impl import PostgreSQLDB
+_original_initdb = PostgreSQLDB.initdb
+
+async def _patched_initdb(self):
+    try:
+        self.pool = await asyncpg.create_pool(
+            user=self.user,
+            password=self.password,
+            database=self.database,
+            host=self.host,
+            port=self.port,
+            min_size=1,
+            max_size=self.max,
+            statement_cache_size=0,          # PgBouncer compat
+            server_settings={"jit": "off"},  # avoid JIT issues on poolers
+        )
+        print(f"PostgreSQL, Connected to database at {self.host}:{self.port}/{self.database}")
+    except Exception as e:
+        print(f"PostgreSQL, Failed to connect database at {self.host}:{self.port}/{self.database}, Got:{e}")
+        raise
+
+PostgreSQLDB.initdb = _patched_initdb
+
 # ── LLM / Embedding wrappers ───────────────────────────────────────
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.openai import openai_complete_if_cache, openai_embed
+from lightrag.utils import EmbeddingFunc
+
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
-    kwargs.pop("history_messages", None)  # remove duplicate if present
+    kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
         "z-ai/glm5", prompt,
         system_prompt=system_prompt,
@@ -76,23 +107,20 @@ async def get_rag():
             vector_storage="PGVectorStorage",
             kv_storage="PGKVStorage",
             addon_params={
-                "neo4j_url": NEO4J_URI,
+                "neo4j_url": NEO4J_URI_BOLT,
                 "neo4j_auth": (NEO4J_USER, NEO4J_PASSWORD),
                 "connection_string": SUPABASE_PG_URL,
             },
             vector_db_storage_cls_kwargs={"connection_string": SUPABASE_PG_URL},
         )
+        # Explicitly await storage initialization instead of letting it run
+        # as a fire-and-forget background task (which silently fails on Vercel)
+        await rag.initialize_storages()
     return rag
 
 # ── FastAPI lifespan (critical for LightRAG shared storage) ─────────
 @asynccontextmanager
 async def lifespan(app):
-    """
-    LightRAG requires `initialize_share_data()` and
-    `initialize_pipeline_status()` to be called at startup, otherwise
-    `pipeline_status["history_messages"]` does not exist and every
-    `ainsert()` crashes with KeyError('history_messages').
-    """
     from lightrag.kg.shared_storage import (
         initialize_share_data,
         initialize_pipeline_status,
@@ -106,7 +134,6 @@ async def lifespan(app):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
-# ── Models ──────────────────────────────────────────────────────────
 class Q(BaseModel):
     question: str
     mode: str = "local"
@@ -116,7 +143,8 @@ class Q(BaseModel):
 def ping():
     return {
         "status": "alive",
-        "version": "2.0",
+        "version": "2.1",
+        "neo4j_uri": NEO4J_URI_BOLT,
         "neo4j_user": NEO4J_USER,
         "pg_host": os.environ.get("POSTGRES_HOST", "NOT SET"),
     }
@@ -162,7 +190,7 @@ async def ask(req: Q):
 async def graph():
     from neo4j import GraphDatabase
     try:
-        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session() as s:
             res = s.run(
                 "MATCH (n) WITH n LIMIT 150 "
