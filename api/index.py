@@ -90,7 +90,7 @@ PostgreSQLDB.initdb = _patched_initdb
 logging.getLogger("lightrag").setLevel(logging.WARNING)
 logging.getLogger("lightrag.kg.shared_storage").setLevel(logging.ERROR)
 
-from lightrag import LightRAG, QueryParam
+from lightrag import LightRAG
 from lightrag.llm.openai import openai_complete_if_cache
 from lightrag.utils import EmbeddingFunc
 from lightrag.kg import shared_storage as shared_storage_module
@@ -109,8 +109,8 @@ shared_storage_module.direct_log = _quiet_direct_log
 
 
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
-    llm_max_tokens = kwargs.pop("max_tokens", 900)
-    llm_temperature = kwargs.pop("temperature", 0.25)
+    llm_max_tokens = kwargs.pop("max_tokens", 700)
+    llm_temperature = kwargs.pop("temperature", 0.35)
     llm_top_p = kwargs.pop("top_p", 0.9)
     kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
@@ -123,7 +123,7 @@ async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs
         temperature=llm_temperature,
         top_p=llm_top_p,
         max_tokens=llm_max_tokens,
-        openai_client_configs={"timeout": 35.0},
+        openai_client_configs={"timeout": 45.0},
         **kwargs,
     )
 
@@ -167,19 +167,19 @@ def clean_answer(text):
     return cleaned
 
 
-def _tokenize(text):
+def _tokenize_query(text):
     stop = {
         "the", "and", "for", "with", "from", "that", "this", "your", "have", "about",
         "what", "when", "where", "which", "into", "during", "work", "worked", "tell",
         "me", "you", "are", "was", "how", "did", "use", "used", "on", "in", "of",
     }
-    raw_tokens = re.findall(r"[a-z0-9\+\#-]{3,}", text.lower())
+    raw_tokens = re.findall(r"[a-z0-9\+\#-]{3,}", (text or "").lower())
     return [tok for tok in raw_tokens if tok not in stop]
 
 
-def _rank_profile_docs(question, schema, limit=3):
+def _rank_schema_documents(question, schema, limit=4):
     docs = (schema or {}).get("documents", [])
-    q_tokens = _tokenize(question)
+    q_tokens = _tokenize_query(question)
     ranked = []
     for doc in docs:
         title = re.sub(r"[^a-z0-9]+", " ", (doc.get("title") or "").lower())
@@ -193,71 +193,95 @@ def _rank_profile_docs(question, schema, limit=3):
                 score += 3
             if tok in content:
                 score += 1
-        if score > 0:
-            ranked.append((score, doc))
-    ranked.sort(key=lambda item: item[0], reverse=True)
-    return ranked[:limit]
+        priority = int(doc.get("metadata", {}).get("priority", 1))
+        ranked.append((score, priority, doc))
+
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    top = [doc for score, _, doc in ranked if score > 0][:limit]
+    if top:
+        return top
+
+    # Fallback: highest-priority sections if query tokens are sparse.
+    fallback = sorted(
+        docs,
+        key=lambda d: int(d.get("metadata", {}).get("priority", 1)),
+        reverse=True,
+    )
+    return fallback[:limit]
 
 
-def _to_first_person(text):
-    if not text:
+def _build_profile_context(question, schema, limit=4):
+    selected = _rank_schema_documents(question, schema, limit=limit)
+    if not selected:
         return ""
-    out = text
-    out = re.sub(r"\bSatvik\b", "I", out, flags=re.IGNORECASE)
-    out = re.sub(r"\bhe has\b", "I have", out, flags=re.IGNORECASE)
-    out = re.sub(r"\bhe is\b", "I am", out, flags=re.IGNORECASE)
-    out = re.sub(r"\bhis\b", "my", out, flags=re.IGNORECASE)
-    return out.strip()
+
+    chunks = []
+    for doc in selected:
+        title = doc.get("title", "Profile Section")
+        tags = ", ".join(doc.get("tags") or []) or "general"
+        content = _compact_for_index(doc.get("content", ""), max_chars=420)
+        chunks.append(
+            f"[Section] {title}\n[Tags] {tags}\n[Content] {content}"
+        )
+    return "\n\n".join(chunks)
 
 
-def _normalize_title(title):
-    out = (title or "").strip()
-    out = re.sub(r"^project\s*:\s*", "", out, flags=re.IGNORECASE)
-    out = re.sub(r"^section\s*\d+[:\-]?\s*", "", out, flags=re.IGNORECASE)
-    return out.strip()
+def _extract_profile_facts(schema):
+    docs = (schema or {}).get("documents", [])
+    merged = "\n".join((doc.get("content") or "") for doc in docs)
+
+    def find(pattern):
+        m = re.search(pattern, merged, flags=re.IGNORECASE)
+        return m.group(1).strip() if m else ""
+
+    return {
+        "name": find(r"Full Name:\s*([^\n]+)"),
+        "title": find(r"Professional Title:\s*([^\n]+)"),
+        "company": find(r"Current Company:\s*([^\n]+)"),
+        "location": find(r"Current Location:\s*([^\n]+)"),
+        "email": find(r"Email:\s*([^\n]+)"),
+        "linkedin": find(r"LinkedIn:\s*([^\n]+)"),
+        "github": find(r"GitHub:\s*([^\n]+)"),
+        "portfolio": find(r"Portfolio:\s*([^\n]+)"),
+    }
 
 
-def _best_doc_label(doc):
-    title = _normalize_title(doc.get("title", "this project"))
-    content = doc.get("content", "")
-    if title.lower() in {"projects expanded", "projects - expanded", "projects — expanded"}:
-        m = re.search(r"project:\s*([a-z0-9][a-z0-9 \-_/&]+)", content, flags=re.IGNORECASE)
-        if m:
-            raw = m.group(1).strip()
-            first_token = raw.split()[0] if raw.split() else raw
-            key = re.sub(r"[^a-z0-9]+", "", first_token.lower())
-            if key == "healthjini":
-                return "HealthJini"
-            if key == "vaani":
-                return "Vaani"
-            if key == "pm":
-                return "PM GatiShakti"
-            return first_token.title()
-    return title
-
-
-def _answer_from_profile_fastpath(question, schema):
-    ranked = _rank_profile_docs(question, schema, limit=3)
-    if not ranked or ranked[0][0] < 3:
+def _answer_direct_fact(question, facts):
+    q = (question or "").lower()
+    if not q:
         return None
 
-    parts = []
-    primary = ranked[0][1]
-    primary_title = _best_doc_label(primary)
-    primary_summary = _to_first_person(primary.get("metadata", {}).get("summary", ""))
-    if primary_summary:
-        parts.append(f"I've worked on {primary_title}. {primary_summary}")
-    else:
-        parts.append(f"I've worked on {primary_title}.")
+    location_terms = ("where", "live", "living", "location", "based")
+    if facts.get("location") and any(term in q for term in location_terms):
+        return f"I currently live in {facts['location']}."
 
-    for _, doc in ranked[1:]:
-        title = _best_doc_label(doc)
-        summary = _to_first_person(doc.get("metadata", {}).get("summary", ""))
-        if summary:
-            parts.append(f"I've also done {title}. {summary}")
+    role_terms = ("profession", "professionally", "role", "title", "what do you do", "what are you")
+    project_terms = ("healthjini", "gati", "vaani", "project", "built", "work on", "tell me about")
+    if (
+        facts.get("title")
+        and any(term in q for term in role_terms)
+        and not any(term in q for term in project_terms)
+    ):
+        if facts.get("company"):
+            return f"I am an {facts['title']} at {facts['company']}."
+        return f"I am an {facts['title']}."
 
-    answer = " ".join(parts).strip()
-    return clean_answer(answer) if answer else None
+    if facts.get("company") and ("company" in q or "where do you work" in q):
+        return f"I currently work at {facts['company']}."
+
+    if "email" in q and facts.get("email"):
+        return f"You can reach me at {facts['email']}."
+
+    if "linkedin" in q and facts.get("linkedin"):
+        return f"Here is my LinkedIn: {facts['linkedin']}"
+
+    if "github" in q and facts.get("github"):
+        return f"My GitHub is {facts['github']}."
+
+    if "portfolio" in q and facts.get("portfolio"):
+        return f"My portfolio is {facts['portfolio']}."
+
+    return None
 
 
 def _schema_graph_overlay(schema, max_docs=18):
@@ -490,7 +514,7 @@ def _build_profile_schema(raw_text, source_path):
     return schema
 
 
-def _compact_for_index(content, max_chars=700):
+def _compact_for_index(content, max_chars=420):
     one_line = re.sub(r"\s+", " ", content).strip()
     if len(one_line) <= max_chars:
         return one_line
@@ -506,7 +530,7 @@ def _render_schema_for_rag(schema):
     blocks = []
     for doc in schema.get("documents", []):
         tags = ", ".join(doc.get("tags") or []) or "general"
-        content = _compact_for_index(doc.get("content", ""), max_chars=700)
+        content = _compact_for_index(doc.get("content", ""), max_chars=420)
         block = (
             f"<profile_document id=\"{doc['id']}\" category=\"{doc['category']}\">\n"
             f"<title>{doc['title']}</title>\n"
@@ -519,18 +543,6 @@ def _render_schema_for_rag(schema):
         )
         blocks.append(block)
     return "\n\n".join(blocks)
-
-
-def _render_fast_delta(schema):
-    rows = []
-    for doc in schema.get("documents", []):
-        tags = ", ".join((doc.get("tags") or [])[:4]) or "general"
-        summary = doc.get("metadata", {}).get("summary", "")
-        rows.append(
-            f"[{doc.get('category', 'general')}] {doc.get('title', 'Section')} | tags: {tags} | {summary}"
-        )
-    joined = "\n".join(rows)
-    return joined[:4000]
 
 
 def _load_profile_payload():
@@ -565,7 +577,6 @@ def _load_profile_payload():
     return {
         "schema": schema,
         "rag_text": rag_text,
-        "delta_text": _render_fast_delta(schema) if schema else "",
         "source_hash": source_hash,
         "section_count": schema.get("stats", {}).get("section_count", 0) if schema else 0,
     }
@@ -696,13 +707,57 @@ async def _set_indexed_profile_hash(r, source_hash, section_count):
         meta_store_supported = False
 
 
+async def _clear_workspace_index(r):
+    db = r.doc_status.db
+    if not db or not db.pool:
+        return
+
+    async with db.pool.acquire() as conn:
+        rows = await conn.fetch(
+            """
+            SELECT t.table_name
+            FROM information_schema.tables t
+            WHERE t.table_schema='public' AND t.table_name ILIKE 'lightrag_%'
+            ORDER BY t.table_name
+            """
+        )
+        for row in rows:
+            table_name = row["table_name"]
+            if not re.fullmatch(r"[a-z0-9_]+", table_name):
+                continue
+            has_workspace = await conn.fetchval(
+                """
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM information_schema.columns c
+                    WHERE c.table_schema='public'
+                      AND c.table_name=$1
+                      AND c.column_name='workspace'
+                )
+                """,
+                table_name,
+            )
+            if has_workspace:
+                await conn.execute(f'DELETE FROM "{table_name}" WHERE workspace=$1', db.workspace)
+
+    try:
+        from neo4j import GraphDatabase
+
+        driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session(database=os.environ.get("NEO4J_DATABASE")) as session:
+            session.run("MATCH (n:base) DETACH DELETE n")
+        driver.close()
+    except Exception:
+        # If Neo4j cleanup fails, Postgres cleanup still reduces stale retrieval drift.
+        pass
+
+
 async def _run_warmup(force_reindex=False):
     try:
         set_warmup_state("warming", "Preparing profile schema", 12)
         async with profile_cache_lock:
             payload = _load_profile_payload()
         rag_text = payload["rag_text"]
-        delta_text = payload["delta_text"]
         source_hash = payload["source_hash"]
         section_count = payload["section_count"]
 
@@ -728,50 +783,32 @@ async def _run_warmup(force_reindex=False):
         )
         has_index = await _workspace_has_index(r)
         indexed_hash = await _get_indexed_profile_hash(r)
+        index_stale = has_index and indexed_hash is not None and indexed_hash != source_hash
+        needs_full_build = force_reindex or (not has_index) or index_stale
 
-        if not has_index:
+        if needs_full_build:
+            if has_index and (force_reindex or index_stale):
+                set_warmup_state(
+                    "warming",
+                    "Resetting stale profile index",
+                    64,
+                    source_hash=source_hash,
+                    section_count=section_count,
+                )
+                await _clear_workspace_index(r)
+                has_index = False
+
+            message = "Building knowledge graph index" if not has_index else "Refreshing profile index"
             set_warmup_state(
                 "warming",
-                "Building knowledge graph index",
-                74,
-                source_hash=source_hash,
-                section_count=section_count,
-            )
-            await asyncio.wait_for(r.ainsert(rag_text), timeout=55.0)
-            await _set_indexed_profile_hash(r, source_hash, section_count)
-            set_warmup_state(
-                "ready",
-                f"RAG pipeline ready ({section_count} structured sections)",
-                100,
-                source_hash=source_hash,
-                section_count=section_count,
-            )
-            return
-
-        # Fast startup path for warm instances with an existing index.
-        if force_reindex:
-            set_warmup_state(
-                "warming",
-                "Applying forced profile refresh",
+                message,
                 78,
                 source_hash=source_hash,
                 section_count=section_count,
             )
-            await asyncio.wait_for(r.ainsert(delta_text), timeout=30.0)
+            await r.ainsert(rag_text)
             await _set_indexed_profile_hash(r, source_hash, section_count)
-            set_warmup_state(
-                "ready",
-                f"RAG pipeline ready ({section_count} structured sections)",
-                100,
-                source_hash=source_hash,
-                section_count=section_count,
-            )
-            return
-
-        # Keep chat fast: rely on existing index + structured profile fast-path.
-        if meta_store_supported and indexed_hash != source_hash:
-            await _set_indexed_profile_hash(r, source_hash, section_count)
-            message = "RAG ready using hot index + updated structured profile"
+            message = f"RAG pipeline ready ({section_count} structured sections)"
         else:
             message = "RAG pipeline ready"
         set_warmup_state(
@@ -798,6 +835,13 @@ async def ensure_warmup_started(force_reindex=False):
             return
         if warmup_task and not warmup_task.done() and not force_reindex:
             return
+        set_warmup_state(
+            "warming",
+            "Warmup task queued",
+            max(5, warmup_state.get("progress", 0)),
+            source_hash=warmup_state.get("source_hash", ""),
+            section_count=warmup_state.get("section_count", 0),
+        )
         warmup_task = asyncio.create_task(_run_warmup(force_reindex=force_reindex))
 
 
@@ -881,9 +925,9 @@ async def readiness():
 
 
 @app.get("/api/init")
-async def init_pipeline(force: bool = False):
+async def init_pipeline(force: bool = False, wait: bool = False):
     await ensure_warmup_started(force_reindex=force)
-    if warmup_task:
+    if wait and warmup_task:
         try:
             await warmup_task
         except Exception as e:
@@ -975,37 +1019,49 @@ async def ask(req: Q):
 
         async with profile_cache_lock:
             payload = _load_profile_payload()
-        fast_answer = _answer_from_profile_fastpath(req.question, payload.get("schema"))
-        if fast_answer:
-            return {"answer": fast_answer, "mode_used": "profile_fastpath"}
+        schema = payload.get("schema") or {}
+        direct_answer = _answer_direct_fact(req.question, _extract_profile_facts(schema))
+        if direct_answer:
+            return {"answer": direct_answer, "mode_used": "profile_rag"}
 
-        r = await get_rag()
-        mode = req.mode if req.mode in {"local", "hybrid", "global"} else "hybrid"
-        result = await asyncio.wait_for(
-            r.aquery(
-                req.question,
-                param=QueryParam(
-                    mode=mode,
-                    response_type="Natural conversational answer in first person (4-7 sentences)",
-                    top_k=10,
-                    max_token_for_text_unit=1200,
-                    max_token_for_local_context=1400,
-                    max_token_for_global_context=1400,
+        context = _build_profile_context(req.question, schema, limit=4)
+        if not context:
+            return {
+                "answer": (
+                    "I do not have that exact detail in my profile yet. "
+                    "Ask me about projects, experience, skills, or location and I can answer directly."
                 ),
+                "mode_used": "profile_rag",
+            }
+
+        prompt = (
+            "Use the profile context below to answer the user's question in first person.\n"
+            "Keep the reply natural, specific, and concise.\n"
+            "When the context contains explicit facts (for example location, role, company, contact), use those exact facts.\n"
+            "If the context does not contain the answer, clearly say that detail is not in my profile.\n\n"
+            f"USER QUESTION:\n{req.question}\n\n"
+            f"PROFILE CONTEXT:\n{context}"
+        )
+        result = await asyncio.wait_for(
+            nvidia_llm(
+                prompt,
                 system_prompt=ASSISTANT_SYSTEM_PROMPT,
+                temperature=0.3,
+                top_p=0.9,
+                max_tokens=420,
             ),
-            timeout=16.0,
+            timeout=25.0,
         )
 
         text_result = clean_answer(str(result or ""))
-        if text_result and text_result.lower() not in {"none", ""}:
-            return {"answer": text_result, "mode_used": mode}
+        if text_result and text_result.lower() not in {"none", "", "[no-context]"}:
+            return {"answer": text_result, "mode_used": "profile_rag"}
         return {
             "answer": (
                 "I do not have that exact detail cached yet, but I can answer if you ask a bit more specifically "
                 "(for example: project name, timeline, or tool stack)."
             ),
-            "mode_used": mode,
+            "mode_used": "profile_rag",
         }
     except asyncio.TimeoutError:
         return {"error": "Query timed out. Please try again in a few seconds.", "mode_used": "timeout"}
