@@ -13,22 +13,24 @@ load_dotenv()
 NVIDIA_API_KEY  = os.environ.get("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 NEO4J_URI       = os.environ.get("NEO4J_URI", "")
-NEO4J_USER      = os.environ.get("NEO4J_USERNAME") or os.environ.get("NEO4J_USER", "")
+NEO4J_USER      = os.environ.get("NEO4J_USER") or os.environ.get("NEO4J_USERNAME", "")
 NEO4J_PASSWORD  = os.environ.get("NEO4J_PASSWORD", "")
 SUPABASE_PG_URL = os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_PG_URL", "")
 
-# Convert neo4j+s:// → bolt+s:// to avoid routing-table lookup
-# (Vercel serverless can't do routing discovery: "Unable to retrieve routing information")
-NEO4J_URI_BOLT = NEO4J_URI.replace("neo4j+s://", "bolt+s://").replace("neo4j://", "bolt://")
+# Keep neo4j+s:// protocol — Aura requires routing protocol
+# (bolt+s:// can connect but can't discover the database name)
+NEO4J_URI_BOLT = NEO4J_URI  # keep original protocol
 
 # Sync env vars for drivers that read them directly
 os.environ["NEO4J_URL"]      = NEO4J_URI_BOLT
 os.environ["NEO4J_URI"]      = NEO4J_URI_BOLT  # neo4j_impl reads this
 os.environ["NEO4J_USERNAME"] = NEO4J_USER
 os.environ["NEO4J_PASSWORD"] = NEO4J_PASSWORD
-# Aura free tier only has a database called "neo4j" — LightRAG auto-generates
-# a name from the namespace (e.g. "chunk-entity-relation") which doesn't exist.
-os.environ["NEO4J_DATABASE"] = "neo4j"
+# Aura free tier database is named after the instance ID (e.g. "66adaa8b")
+# Extract it from the URI: neo4j+s://66adaa8b.databases.neo4j.io
+import re as _re
+_aura_match = _re.match(r'neo4j\+s(?:sc)?://([^.]+)\.databases\.neo4j\.io', NEO4J_URI)
+os.environ["NEO4J_DATABASE"] = _aura_match.group(1) if _aura_match else "neo4j"
 
 # ── Parse PG URL → individual env vars for LightRAG's ClientManager ─
 if SUPABASE_PG_URL:
@@ -195,7 +197,7 @@ async def graph():
     from neo4j import GraphDatabase
     try:
         driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
-        with driver.session(database="neo4j") as s:
+        with driver.session(database=os.environ.get("NEO4J_DATABASE")) as s:
             res = s.run(
                 "MATCH (n:base) WITH n LIMIT 150 "
                 "OPTIONAL MATCH (n)-[r]->(m:base) "
