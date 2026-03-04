@@ -3,376 +3,810 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Satvik Mudgal — AI Assistant</title>
+<title>Satvik Mudgal - AI Assistant</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #21262d;
-    --green: #00dc82;
-    --green-dim: #00dc8240;
-    --green-glow: #00dc8280;
-    --text: #e6edf3;
-    --muted: #7d8590;
-    --node-skill: #00dc82;
-    --node-project: #58a6ff;
-    --node-company: #f78166;
-    --node-person: #d2a8ff;
-    --node-unknown: #8b949e;
+    --bg: #070a10;
+    --surface: #0f1624;
+    --surface-2: #131d2f;
+    --border: #223048;
+    --text: #e7edf7;
+    --muted: #8ca0c0;
+    --accent: #37d2a5;
+    --accent-2: #55a6ff;
+    --warn: #f6c177;
+    --danger: #ff7f90;
+    --shadow: 0 0 28px rgba(55, 210, 165, 0.12);
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', 'Fira Code', monospace; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-  /* ── Header ── */
-  header { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: var(--surface); }
-  .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, var(--green), #0a84ff); display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 0 12px var(--green-glow); }
-  header h1 { font-size: 14px; color: var(--green); letter-spacing: 0.05em; }
-  header p  { font-size: 11px; color: var(--muted); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(55,210,165,0.14) 0%, transparent 34%),
+      radial-gradient(circle at 92% 100%, rgba(85,166,255,0.12) 0%, transparent 34%),
+      var(--bg);
+    color: var(--text);
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, Menlo, monospace;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-  /* ── Tabs ── */
-  .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--surface); }
-  .tab  { padding: 10px 24px; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--muted); transition: all .2s; letter-spacing: 0.05em; }
-  .tab.active { color: var(--green); border-bottom-color: var(--green); }
-  .tab:hover:not(.active) { color: var(--text); }
+  header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(15, 22, 36, 0.9);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .head-left { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #04131b;
+    font-weight: 900;
+    box-shadow: var(--shadow);
+  }
+  .title {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  .sub {
+    margin: 2px 0 0;
+    font-size: 10px;
+    color: var(--muted);
+  }
 
-  /* ── Panels ── */
-  .panel { display: none; flex: 1; overflow: hidden; }
-  .panel.active { display: flex; flex-direction: column; }
+  .pipeline-pill {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warn);
+    box-shadow: 0 0 12px rgba(246,193,119,0.5);
+  }
+  .dot.ready {
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(55,210,165,0.5);
+  }
+  .dot.error {
+    background: var(--danger);
+    box-shadow: 0 0 12px rgba(255,127,144,0.5);
+  }
 
-  /* ── Chat ── */
-  .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-  .messages::-webkit-scrollbar { width: 4px; }
-  .messages::-webkit-scrollbar-track { background: transparent; }
-  .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .tab {
+    cursor: pointer;
+    padding: 10px 16px;
+    font-size: 11px;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: 0.2s ease;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
 
-  .msg { display: flex; gap: 10px; max-width: 88%; animation: fadeUp .3s ease; }
+  .panel { display: none; flex: 1; min-height: 0; }
+  .panel.active { display: flex; }
+
+  #chat-panel { flex-direction: column; }
+
+  .pipeline-card {
+    margin: 12px 14px 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(85,166,255,0.08), rgba(55,210,165,0.08));
+    padding: 12px;
+  }
+  .pipeline-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .pipeline-head strong { color: var(--text); }
+  .pipeline-msg { font-size: 10px; color: var(--muted); margin: 0; }
+  .bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(8, 14, 24, 0.9);
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .bar > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.3s ease;
+  }
+  .pipeline-card.ready {
+    border-color: rgba(55,210,165,0.4);
+    background: rgba(55,210,165,0.1);
+  }
+
+  .messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-thumb { background: #20314b; border-radius: 8px; }
+
+  .msg { max-width: 90%; display: flex; gap: 8px; }
   .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-  @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: none; } }
+  .icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    flex: 0 0 auto;
+  }
+  .msg.user .icon { background: #21324f; }
+  .msg.bot .icon { background: rgba(55,210,165,0.2); border: 1px solid rgba(55,210,165,0.45); }
 
-  .bubble { padding: 10px 14px; border-radius: 12px; font-size: 12px; line-height: 1.6; }
-  .msg.user .bubble  { background: var(--green); color: #000; border-bottom-right-radius: 3px; }
-  .msg.bot  .bubble  { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
-  .msg-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
-  .msg.bot  .msg-icon { background: var(--green-dim); border: 1px solid var(--green-glow); }
-  .msg.user .msg-icon { background: #21262d; }
+  .bubble {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.55;
+    padding: 10px 12px;
+    white-space: pre-wrap;
+  }
+  .msg.user .bubble {
+    background: linear-gradient(135deg, #39d5aa, #50aaff);
+    border: none;
+    color: #04131b;
+    font-weight: 600;
+  }
 
-  .typing-dots span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--green); margin: 0 2px; animation: dot 1.2s infinite; }
-  .typing-dots span:nth-child(2) { animation-delay: .2s; }
-  .typing-dots span:nth-child(3) { animation-delay: .4s; }
-  @keyframes dot { 0%,80%,100% { opacity:.2; transform: scale(.8); } 40% { opacity:1; transform: scale(1); } }
+  .typing span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin: 0 2px;
+    animation: pulse 1s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
 
-  .suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
-  .suggestion  { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; color: var(--muted); cursor: pointer; transition: all .2s; }
-  .suggestion:hover { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .suggestions {
+    display: flex;
+    gap: 6px;
+    padding: 0 14px 10px;
+    overflow-x: auto;
+  }
+  .suggestion {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: pointer;
+    background: var(--surface);
+  }
+  .suggestion:hover { color: var(--accent); border-color: var(--accent); }
 
-  .input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface); }
-  .input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 12px; color: var(--text); font-family: inherit; outline: none; transition: border .2s; }
-  .input-row input:focus { border-color: var(--green); }
-  .input-row input::placeholder { color: var(--muted); }
-  .send-btn { background: var(--green); color: #000; border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; font-family: inherit; }
-  .send-btn:hover { box-shadow: 0 0 16px var(--green-glow); transform: scale(1.03); }
-  .send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .composer {
+    border-top: 1px solid var(--border);
+    background: rgba(12, 18, 30, 0.9);
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+  }
+  .composer input {
+    flex: 1;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: #0a1322;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    padding: 9px 12px;
+    outline: none;
+  }
+  .composer input:focus { border-color: var(--accent); }
+  .composer button {
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #05131c;
+    font: inherit;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0 14px;
+    cursor: pointer;
+  }
+  .composer button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 
-  /* ── Graph ── */
-  #graph-panel { position: relative; }
+  #graph-panel { position: relative; overflow: hidden; }
   #graph-svg { width: 100%; height: 100%; }
 
-  .graph-legend { position: absolute; top: 12px; left: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 11px; }
-  .graph-legend h4 { color: var(--muted); margin-bottom: 6px; font-size: 10px; letter-spacing: .08em; }
-  .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
-  .legend-dot  { width: 9px; height: 9px; border-radius: 50%; }
+  .graph-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    pointer-events: none;
+  }
+  .card {
+    pointer-events: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(15, 22, 36, 0.88);
+    backdrop-filter: blur(8px);
+    padding: 10px;
+    min-width: 190px;
+    max-width: 300px;
+  }
+  .card h4 {
+    margin: 0 0 8px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .metric {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    padding: 7px;
+  }
+  .metric .k { color: var(--muted); font-size: 9px; }
+  .metric .v { color: var(--text); font-size: 12px; font-weight: 700; margin-top: 2px; }
 
-  .graph-controls { position: absolute; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 6px; }
-  .ctrl-btn { width: 30px; height: 30px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .2s; }
-  .ctrl-btn:hover { border-color: var(--green); color: var(--green); }
+  .top-list { margin: 0; padding-left: 18px; font-size: 10px; color: var(--muted); }
+  .top-list li { margin-bottom: 3px; }
 
-  .node-tooltip { position: absolute; background: var(--surface); border: 1px solid var(--green); border-radius: 8px; padding: 10px 14px; font-size: 11px; max-width: 220px; pointer-events: none; opacity: 0; transition: opacity .2s; z-index: 10; }
-  .node-tooltip h4 { color: var(--green); margin-bottom: 4px; }
-  .node-tooltip p  { color: var(--muted); line-height: 1.5; }
+  .search-row { display: flex; gap: 6px; }
+  .search-row input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #0a1322;
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+    padding: 7px 8px;
+  }
+  .search-row button {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+  .search-row button:hover { border-color: var(--accent); color: var(--accent); }
 
-  .graph-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
-  .graph-loading p { color: var(--muted); font-size: 12px; }
-  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .graph-load {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    background: rgba(5, 9, 15, 0.65);
+  }
+
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    border: 1px solid rgba(55,210,165,0.5);
+    border-radius: 10px;
+    background: rgba(9, 16, 27, 0.95);
+    padding: 9px 10px;
+    max-width: 260px;
+    font-size: 11px;
+    color: var(--text);
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 5;
+  }
+  .tooltip strong { color: var(--accent); }
+
+  @media (max-width: 900px) {
+    .graph-overlay { flex-direction: column; }
+    .metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card { max-width: none; }
+  }
 </style>
 </head>
 <body>
-
 <header>
-  <div class="avatar">🤖</div>
-  <div>
-    <h1>SATVIK MUDGAL · AI</h1>
-    <p>Powered by LightRAG + NVIDIA NIM · Ask me anything</p>
+  <div class="head-left">
+    <div class="avatar">AI</div>
+    <div>
+      <h1 class="title">SATVIK MUDGAL - AI COPILOT</h1>
+      <p class="sub">LightRAG + NVIDIA NIM + Neo4j + PGVector</p>
+    </div>
+  </div>
+  <div class="pipeline-pill">
+    <span id="head-dot" class="dot"></span>
+    <span id="head-status">Pipeline warming up</span>
   </div>
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('chat')">💬 Chat</div>
-  <div class="tab"        onclick="switchTab('graph')">🕸️ Knowledge Graph</div>
+  <div class="tab active" onclick="switchTab('chat')">Chat</div>
+  <div class="tab" onclick="switchTab('graph')">Knowledge Graph</div>
 </div>
 
-<!-- ── CHAT PANEL ── -->
-<div class="panel active" id="chat-panel">
-  <div class="messages" id="messages">
+<div id="chat-panel" class="panel active">
+  <div id="pipeline-card" class="pipeline-card">
+    <div class="pipeline-head">
+      <strong id="pipeline-title">RAG pipeline running</strong>
+      <span id="pipeline-percent">0%</span>
+    </div>
+    <div class="bar"><div id="pipeline-fill"></div></div>
+    <p id="pipeline-msg" class="pipeline-msg">Preparing model and retrieval indexes...</p>
+  </div>
+
+  <div id="messages" class="messages">
     <div class="msg bot">
-      <div class="msg-icon">🤖</div>
-      <div class="bubble">Hey! I'm Satvik's AI assistant, powered by a knowledge graph of his entire career.<br/><br/>Ask me about his projects, skills, experience, or anything else. 👇</div>
+      <div class="icon">AI</div>
+      <div class="bubble">Hi, I am Satvik's AI twin. Once my RAG pipeline is ready, ask me anything about my work, projects, and skills.</div>
     </div>
   </div>
 
-  <div class="suggestions" id="suggestions">
-    <div class="suggestion" onclick="ask(this.textContent)">What has Satvik built?</div>
-    <div class="suggestion" onclick="ask(this.textContent)">What are his core skills?</div>
-    <div class="suggestion" onclick="ask(this.textContent)">Tell me about his work at Nuvo AI</div>
-    <div class="suggestion" onclick="ask(this.textContent)">What's he working on now?</div>
+  <div id="suggestions" class="suggestions">
+    <div class="suggestion" onclick="ask('What are your strongest skills?')">Strongest skills</div>
+    <div class="suggestion" onclick="ask('Tell me about your role at Nuvo AI')">Nuvo AI role</div>
+    <div class="suggestion" onclick="ask('What projects are you most proud of?')">Best projects</div>
+    <div class="suggestion" onclick="ask('How do you design low latency AI systems?')">Latency approach</div>
   </div>
 
-  <div class="input-row">
-    <input id="q-input" placeholder="Ask anything about Satvik..." onkeydown="if(event.key==='Enter') sendMsg()"/>
-    <button class="send-btn" id="send-btn" onclick="sendMsg()">Send ↑</button>
+  <div class="composer">
+    <input id="q-input" placeholder="Pipeline warming up..." onkeydown="if(event.key==='Enter') sendMsg()" disabled />
+    <button id="send-btn" onclick="sendMsg()" disabled>Send</button>
   </div>
 </div>
 
-<!-- ── GRAPH PANEL ── -->
-<div class="panel" id="graph-panel">
-  <div class="graph-loading" id="graph-loading">
-    <div class="spinner"></div>
-    <p>Loading knowledge graph...</p>
-  </div>
-
+<div id="graph-panel" class="panel">
+  <div id="graph-load" class="graph-load">Loading graph...</div>
   <svg id="graph-svg"></svg>
 
-  <div class="graph-legend">
-    <h4>NODE TYPES</h4>
-    <div class="legend-item"><div class="legend-dot" style="background:#00dc82"></div><span>Skill / Tech</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#58a6ff"></div><span>Project</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#f78166"></div><span>Company</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#d2a8ff"></div><span>Person</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:#8b949e"></div><span>Other</span></div>
+  <div class="graph-overlay">
+    <div class="card">
+      <h4>GRAPH INTELLIGENCE</h4>
+      <div class="metric-grid">
+        <div class="metric"><div class="k">Nodes</div><div class="v" id="metric-nodes">-</div></div>
+        <div class="metric"><div class="k">Edges</div><div class="v" id="metric-edges">-</div></div>
+        <div class="metric"><div class="k">Avg Degree</div><div class="v" id="metric-degree">-</div></div>
+      </div>
+      <ol id="top-connectors" class="top-list"></ol>
+    </div>
+
+    <div class="card">
+      <h4>NODE FOCUS</h4>
+      <div class="search-row">
+        <input id="graph-search" placeholder="Search entity (e.g. Nuvo AI)" />
+        <button onclick="focusNode()">Focus</button>
+      </div>
+    </div>
   </div>
 
-  <div class="graph-controls">
-    <button class="ctrl-btn" onclick="zoomIn()"  title="Zoom in">+</button>
-    <button class="ctrl-btn" onclick="zoomOut()" title="Zoom out">−</button>
-    <button class="ctrl-btn" onclick="resetZoom()" title="Reset">⊙</button>
-  </div>
-
-  <div class="node-tooltip" id="tooltip"></div>
+  <div id="tooltip" class="tooltip"></div>
 </div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-const API = "/api"; 
-console.log("Chat interface initialized with API path:", API);
+const API = '/api';
 
-// ── Tab switching ─────────────────────────────────────────────────────────────
+let busy = false;
+let pipelineReady = false;
+let readinessTimer = null;
+let graphLoaded = false;
+
+let svgZoom = null;
+let simulation = null;
+let graphNodeSelection = null;
+let graphLabelSelection = null;
+let graphData = { nodes: [], links: [] };
+
+const NODE_COLORS = {
+  skill: '#37d2a5',
+  technology: '#37d2a5',
+  project: '#55a6ff',
+  company: '#ff8b6a',
+  organization: '#ff8b6a',
+  person: '#d29cff',
+  unknown: '#8ca0c0',
+};
+
+function nodeColor(type) {
+  const key = String(type || 'unknown').toLowerCase();
+  return NODE_COLORS[key] || NODE_COLORS.unknown;
+}
+
 function switchTab(tab) {
-  console.log("Switching to tab:", tab);
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='chat')||(i===1&&tab==='graph')));
+  document.querySelectorAll('.tab').forEach((t, idx) => {
+    t.classList.toggle('active', (tab === 'chat' && idx === 0) || (tab === 'graph' && idx === 1));
+  });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(tab+'-panel').classList.add('active');
+  document.getElementById(`${tab}-panel`).classList.add('active');
   if (tab === 'graph' && !graphLoaded) loadGraph();
 }
 
-// ── Chat ──────────────────────────────────────────────────────────────────────
-let busy = false;
+function addMsg(role, text) {
+  const messages = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg ${role}`;
 
-function addMsg(role, html) {
-  const wrap = document.getElementById('messages');
-  const div  = document.createElement('div');
-  div.className = `msg ${role}`;
-  div.innerHTML = `<div class="msg-icon">${role==='user'?'👤':'🤖'}</div><div class="bubble">${html}</div>`;
-  wrap.appendChild(div);
-  wrap.scrollTop = wrap.scrollHeight;
-  return div.querySelector('.bubble');
+  const bubble = text.replace(/\n/g, '<br/>');
+  row.innerHTML = `
+    <div class="icon">${role === 'user' ? 'You' : 'AI'}</div>
+    <div class="bubble">${bubble}</div>
+  `;
+  messages.appendChild(row);
+  messages.scrollTop = messages.scrollHeight;
+  return row;
 }
 
-function ask(q) {
-  document.getElementById('q-input').value = q;
+function setComposerEnabled(enabled) {
+  const input = document.getElementById('q-input');
+  const send = document.getElementById('send-btn');
+  input.disabled = !enabled || busy;
+  send.disabled = !enabled || busy;
+  input.placeholder = enabled
+    ? 'Ask me anything about Satvik...'
+    : 'Pipeline warming up...';
+}
+
+function renderPipelineState(state) {
+  const status = state?.status || 'idle';
+  const message = state?.message || 'Preparing...';
+  const progress = Number.isFinite(state?.progress) ? Math.max(0, Math.min(100, state.progress)) : 0;
+
+  const card = document.getElementById('pipeline-card');
+  const title = document.getElementById('pipeline-title');
+  const fill = document.getElementById('pipeline-fill');
+  const percent = document.getElementById('pipeline-percent');
+  const msg = document.getElementById('pipeline-msg');
+
+  const headDot = document.getElementById('head-dot');
+  const headStatus = document.getElementById('head-status');
+
+  fill.style.width = `${progress}%`;
+  percent.textContent = `${progress}%`;
+  msg.textContent = message;
+
+  if (status === 'ready') {
+    pipelineReady = true;
+    title.textContent = 'RAG pipeline ready';
+    card.classList.add('ready');
+    headDot.classList.add('ready');
+    headDot.classList.remove('error');
+    headStatus.textContent = 'Pipeline ready';
+    setComposerEnabled(true);
+    setTimeout(() => { card.style.display = 'none'; }, 1400);
+    return;
+  }
+
+  pipelineReady = false;
+  card.style.display = 'block';
+  card.classList.remove('ready');
+  setComposerEnabled(false);
+
+  if (status === 'error') {
+    title.textContent = 'Warmup issue detected';
+    headDot.classList.remove('ready');
+    headDot.classList.add('error');
+    headStatus.textContent = 'Warmup error';
+  } else {
+    title.textContent = 'RAG pipeline running';
+    headDot.classList.remove('ready');
+    headDot.classList.remove('error');
+    headStatus.textContent = 'Pipeline warming up';
+  }
+}
+
+async function refreshReadiness() {
+  try {
+    const res = await fetch(`${API}/readiness`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const state = await res.json();
+    renderPipelineState(state);
+  } catch (err) {
+    renderPipelineState({ status: 'error', message: `Readiness check failed: ${err.message}`, progress: 100 });
+  }
+}
+
+function ask(text) {
+  document.getElementById('q-input').value = text;
   sendMsg();
 }
 
 async function sendMsg() {
   if (busy) return;
-  const input = document.getElementById('q-input');
-  const q = input.value.trim();
-  if (!q) return;
 
-  console.log("Sending question:", q);
-  document.getElementById('suggestions').style.display = 'none';
-  addMsg('user', q);
+  const input = document.getElementById('q-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  if (!pipelineReady) {
+    addMsg('bot', 'I am still warming up the RAG pipeline. Give me a few seconds and try again.');
+    await refreshReadiness();
+    return;
+  }
+
+  addMsg('user', question);
   input.value = '';
   busy = true;
-  document.getElementById('send-btn').disabled = true;
+  setComposerEnabled(true);
 
-  // typing indicator
-  const typingDiv = document.createElement('div');
-  typingDiv.className = 'msg bot';
-  typingDiv.innerHTML = `<div class="msg-icon">🤖</div><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  document.getElementById('messages').appendChild(typingDiv);
-  document.getElementById('messages').scrollTop = 9999;
+  const typing = addMsg('bot', '<span class="typing"><span></span><span></span><span></span></span>');
 
   try {
-    const res  = await fetch(`${API}/ask`, {
+    const res = await fetch(`${API}/ask`, {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({question: q, mode: 'hybrid'}),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, mode: 'hybrid' }),
     });
 
-    if (!res.ok) {
-        console.error("API Error:", res.status);
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || `Server error: ${res.status}`);
-    }
+    const data = await res.json().catch(() => ({}));
+    typing.remove();
 
-    typingDiv.remove();
-    const data = await res.json();
-    if (data.error) {
-      addMsg('bot', `<span style="color:#f78166">Error: ${data.error}</span>`);
+    if (!res.ok || data.error) {
+      if (data.pipeline) renderPipelineState(data.pipeline);
+      addMsg('bot', data.error || `Request failed (${res.status})`);
     } else {
-      addMsg('bot', (data.answer || '').replace(/\n/g,'<br/>'));
+      addMsg('bot', data.answer || 'I could not generate a response.');
     }
-  } catch (e) {
-    console.error("Fetch Error:", e);
-    typingDiv.remove();
-    addMsg('bot', `<span style="color:#f78166">Error: ${e.message}</span>`);
+  } catch (err) {
+    typing.remove();
+    addMsg('bot', `Request failed: ${err.message}`);
   }
 
   busy = false;
-  document.getElementById('send-btn').disabled = false;
+  setComposerEnabled(pipelineReady);
 }
 
-// ── Graph ─────────────────────────────────────────────────────────────────────
-let graphLoaded = false;
-let svgZoom, simulation;
+function updateGraphStats(nodes, links) {
+  const nodeCount = nodes.length;
+  const edgeCount = links.length;
+  const degreeMap = new Map();
 
-const NODE_COLOR = {
-  skill:      '#00dc82',
-  technology: '#00dc82',
-  project:    '#58a6ff',
-  company:    '#f78166',
-  organization:'#f78166',
-  person:     '#d2a8ff',
-  unknown:    '#8b949e',
-};
+  nodes.forEach(n => degreeMap.set(n.id, 0));
+  links.forEach(l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    degreeMap.set(sid, (degreeMap.get(sid) || 0) + 1);
+    degreeMap.set(tid, (degreeMap.get(tid) || 0) + 1);
+  });
 
-function nodeColor(type) {
-  return NODE_COLOR[(type||'').toLowerCase()] || NODE_COLOR.unknown;
+  const avgDegree = nodeCount ? ((edgeCount * 2) / nodeCount).toFixed(2) : '0.00';
+  document.getElementById('metric-nodes').textContent = String(nodeCount);
+  document.getElementById('metric-edges').textContent = String(edgeCount);
+  document.getElementById('metric-degree').textContent = avgDegree;
+
+  const top = [...degreeMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([id, degree]) => {
+      const node = nodes.find(n => n.id === id);
+      return `${node?.name || id} (${degree})`;
+    });
+
+  const list = document.getElementById('top-connectors');
+  list.innerHTML = top.length
+    ? top.map(item => `<li>${item}</li>`).join('')
+    : '<li>No connector data yet</li>';
 }
 
 async function loadGraph() {
-  console.log("Loading graph...");
+  const loading = document.getElementById('graph-load');
+  loading.style.display = 'grid';
+
   try {
     const res = await fetch(`${API}/graph`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    document.getElementById('graph-loading').style.display = 'none';
-    renderGraph(data.nodes, data.links);
+
+    const nodes = data.nodes || [];
+    const links = data.links || [];
+    graphData = { nodes, links };
+    renderGraph(nodes, links);
+    updateGraphStats(nodes, links);
+
     graphLoaded = true;
-    console.log("Graph rendered successfully.");
-  } catch (e) {
-    console.error("Graph Error:", e);
-    document.getElementById('graph-loading').innerHTML =
-      `<p style="color:#f78166">Failed to load graph: ${e.message}</p>`;
+    loading.style.display = 'none';
+  } catch (err) {
+    loading.textContent = `Failed to load graph: ${err.message}`;
   }
 }
 
 function renderGraph(nodes, links) {
-  const svg    = d3.select('#graph-svg');
-  const W      = svg.node().clientWidth  || 800;
-  const H      = svg.node().clientHeight || 500;
+  const svg = d3.select('#graph-svg');
   const tooltip = document.getElementById('tooltip');
+  const width = svg.node().clientWidth || 900;
+  const height = svg.node().clientHeight || 560;
 
   svg.selectAll('*').remove();
 
-  // Zoom
   const g = svg.append('g');
-  svgZoom = d3.zoom().scaleExtent([0.2, 4]).on('zoom', e => g.attr('transform', e.transform));
+  svgZoom = d3.zoom().scaleExtent([0.25, 4]).on('zoom', (event) => {
+    g.attr('transform', event.transform);
+  });
   svg.call(svgZoom);
 
-  // Defs — glow filter
   const defs = svg.append('defs');
-  const filter = defs.append('filter').attr('id','glow');
-  filter.append('feGaussianBlur').attr('stdDeviation','3').attr('result','coloredBlur');
-  const merge = filter.append('feMerge');
-  merge.append('feMergeNode').attr('in','coloredBlur');
-  merge.append('feMergeNode').attr('in','SourceGraphic');
-
-  // Arrow marker
   defs.append('marker')
-    .attr('id','arrow').attr('viewBox','0 -4 8 8').attr('refX',14).attr('markerWidth',6).attr('markerHeight',6).attr('orient','auto')
-    .append('path').attr('d','M0,-4L8,0L0,4').attr('fill','#30363d');
+    .attr('id', 'arrow')
+    .attr('viewBox', '0 -4 8 8')
+    .attr('refX', 14)
+    .attr('markerWidth', 6)
+    .attr('markerHeight', 6)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M0,-4L8,0L0,4')
+    .attr('fill', '#2f4668');
 
-  // Force sim
   simulation = d3.forceSimulation(nodes)
-    .force('link',   d3.forceLink(links).id(d=>d.id).distance(90).strength(0.4))
-    .force('charge', d3.forceManyBody().strength(-220))
-    .force('center', d3.forceCenter(W/2, H/2))
-    .force('collision', d3.forceCollide(22));
+    .force('link', d3.forceLink(links).id(d => d.id).distance(95).strength(0.35))
+    .force('charge', d3.forceManyBody().strength(-240))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide(24));
 
-  // Links
-  const link = g.append('g').selectAll('line')
-    .data(links).join('line')
-    .attr('stroke','#21262d').attr('stroke-width', d => Math.min(d.weight*1.2, 3))
-    .attr('marker-end','url(#arrow)');
+  const link = g.append('g')
+    .selectAll('line')
+    .data(links)
+    .join('line')
+    .attr('stroke', '#22344f')
+    .attr('stroke-width', d => Math.min(3, 0.8 + Number(d.weight || 1)))
+    .attr('marker-end', 'url(#arrow)');
 
-  // Link labels
-  const linkLabel = g.append('g').selectAll('text')
-    .data(links.filter(l=>l.label)).join('text')
-    .attr('fill','#30363d').attr('font-size',8).attr('text-anchor','middle')
-    .attr('font-family','monospace').text(d => d.label.split(',')[0].slice(0,18));
-
-  // Nodes
-  const node = g.append('g').selectAll('circle')
-    .data(nodes).join('circle')
-    .attr('r', d => d.name?.toLowerCase().includes('satvik') ? 18 : 10)
+  graphNodeSelection = g.append('g')
+    .selectAll('circle')
+    .data(nodes)
+    .join('circle')
+    .attr('r', d => String(d.name || '').toLowerCase().includes('satvik') ? 18 : 10)
     .attr('fill', d => nodeColor(d.type))
-    .attr('opacity', 0.9)
-    .attr('filter','url(#glow)')
-    .attr('cursor','pointer')
+    .attr('stroke', '#06101c')
+    .attr('stroke-width', 1.5)
+    .style('cursor', 'pointer')
     .call(d3.drag()
-      .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
-      .on('end',   (e,d) => { if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
-    )
-    .on('mouseover', (e, d) => {
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on('drag', (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }))
+    .on('mouseover', (event, d) => {
       tooltip.style.opacity = '1';
-      tooltip.innerHTML = `<h4>${d.name}</h4>${d.desc ? `<p>${d.desc.slice(0,120)}${d.desc.length>120?'…':''}</p>` : `<p style="color:#30363d">type: ${d.type}</p>`}`;
+      tooltip.innerHTML = `<strong>${d.name || 'Unknown'}</strong><br/>${d.desc ? d.desc.slice(0, 170) : `type: ${d.type || 'unknown'}`}`;
     })
-    .on('mousemove', e => {
-      tooltip.style.left = (e.offsetX + 14) + 'px';
-      tooltip.style.top  = (e.offsetY - 14) + 'px';
+    .on('mousemove', (event) => {
+      tooltip.style.left = `${event.offsetX + 14}px`;
+      tooltip.style.top = `${event.offsetY - 16}px`;
     })
-    .on('mouseout', () => { tooltip.style.opacity = '0'; });
+    .on('mouseout', () => {
+      tooltip.style.opacity = '0';
+    });
 
-  // Node labels
-  const label = g.append('g').selectAll('text')
-    .data(nodes).join('text')
-    .attr('fill', d => nodeColor(d.type))
-    .attr('font-size', d => d.name?.toLowerCase().includes('satvik') ? 11 : 9)
-    .attr('font-family','monospace')
-    .attr('text-anchor','middle')
-    .attr('dy', d => (d.name?.toLowerCase().includes('satvik') ? 18 : 10) + 13)
-    .attr('pointer-events','none')
-    .text(d => d.name?.slice(0,20) || '');
+  graphLabelSelection = g.append('g')
+    .selectAll('text')
+    .data(nodes)
+    .join('text')
+    .attr('font-size', 9)
+    .attr('fill', '#98aac8')
+    .attr('text-anchor', 'middle')
+    .attr('pointer-events', 'none')
+    .attr('dy', d => (String(d.name || '').toLowerCase().includes('satvik') ? 18 : 10) + 12)
+    .text(d => String(d.name || '').slice(0, 20));
 
   simulation.on('tick', () => {
     link
-      .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
-      .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-    linkLabel
-      .attr('x',d=>(d.source.x+d.target.x)/2)
-      .attr('y',d=>(d.source.y+d.target.y)/2);
-    node.attr('cx',d=>d.x).attr('cy',d=>d.y);
-    label.attr('x',d=>d.x).attr('y',d=>d.y);
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+
+    graphNodeSelection
+      .attr('cx', d => d.x)
+      .attr('cy', d => d.y);
+
+    graphLabelSelection
+      .attr('x', d => d.x)
+      .attr('y', d => d.y);
   });
 }
 
-function zoomIn()    { d3.select('#graph-svg').transition().call(svgZoom.scaleBy, 1.4); }
-function zoomOut()   { d3.select('#graph-svg').transition().call(svgZoom.scaleBy, 0.7); }
-function resetZoom() { d3.select('#graph-svg').transition().call(svgZoom.transform, d3.zoomIdentity); }
+function focusNode() {
+  const q = document.getElementById('graph-search').value.trim().toLowerCase();
+  if (!q || !graphData.nodes.length || !svgZoom) return;
+
+  const node = graphData.nodes.find(n => String(n.name || '').toLowerCase().includes(q));
+  if (!node || typeof node.x !== 'number' || typeof node.y !== 'number') return;
+
+  const svg = d3.select('#graph-svg');
+  const width = svg.node().clientWidth || 900;
+  const height = svg.node().clientHeight || 560;
+  const transform = d3.zoomIdentity.translate(width / 2 - node.x * 1.7, height / 2 - node.y * 1.7).scale(1.7);
+  svg.transition().duration(550).call(svgZoom.transform, transform);
+
+  graphNodeSelection
+    .attr('stroke-width', d => d.id === node.id ? 4 : 1.5)
+    .attr('stroke', d => d.id === node.id ? '#f6c177' : '#06101c');
+
+  setTimeout(() => {
+    graphNodeSelection.attr('stroke-width', 1.5).attr('stroke', '#06101c');
+  }, 2000);
+}
+
+async function boot() {
+  await refreshReadiness();
+  readinessTimer = setInterval(refreshReadiness, 2500);
+}
+
+window.addEventListener('load', boot);
 </script>
 </body>
 </html>
