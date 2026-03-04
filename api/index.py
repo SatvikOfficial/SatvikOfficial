@@ -114,6 +114,7 @@ async def get_rag():
     if rag is None:
         rag = LightRAG(
             working_dir=WORKING_DIR,
+            chunk_token_size=500,  # nv-embedqa-e5-v5 max is 512 tokens
             llm_model_func=nvidia_llm,
             embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=512, func=nvidia_embed),
             graph_storage="Neo4JStorage",
