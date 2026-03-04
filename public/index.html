@@ -227,29 +227,11 @@ async function sendMsg() {
     }
 
     typingDiv.remove();
-    const bubble = addMsg('bot', '');
-    const reader = res.body.getReader();
-    const dec    = new TextDecoder();
-    let   text   = '';
-
-    while (true) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      const lines = dec.decode(value).split('\n');
-      for (const line of lines) {
-        if (!line.startsWith('data:')) continue;
-        const raw = line.slice(5).trim();
-        if (raw === '[DONE]') break;
-        try {
-          const d = JSON.parse(raw);
-          if (d.token) { 
-            text += d.token; 
-            bubble.innerHTML = text.replace(/\n/g,'<br/>'); 
-          }
-          if (d.error) { bubble.innerHTML = `<span style="color:#f78166">Error: ${d.error}</span>`; }
-        } catch(e) {}
-      }
-      document.getElementById('messages').scrollTop = 9999;
+    const data = await res.json();
+    if (data.error) {
+      addMsg('bot', `<span style="color:#f78166">Error: ${data.error}</span>`);
+    } else {
+      addMsg('bot', (data.answer || '').replace(/\n/g,'<br/>'));
     }
   } catch (e) {
     console.error("Fetch Error:", e);

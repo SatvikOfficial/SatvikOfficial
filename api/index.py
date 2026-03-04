@@ -142,6 +142,7 @@ async def lifespan(app):
     )
     initialize_share_data(workers=1)
     await initialize_pipeline_status()
+    await get_rag()  # pre-warm the RAG singleton
     yield
     finalize_share_data()
 
@@ -171,19 +172,6 @@ async def init_pipeline():
         if os.path.exists(data_path):
             with open(data_path) as f:
                 content = f.read()
-            # Force re-processing: clear ALL stale doc entries from previous failed runs.
-            # LightRAG's filter_keys() skips docs that exist in these tables, even if
-            # they failed to process. We must clear them to allow re-ingestion.
-            try:
-                db = r.doc_status.db
-                if db and db.pool:
-                    workspace = db.workspace
-                    async with db.pool.acquire() as conn:
-                        for table in ["LIGHTRAG_DOC_STATUS", "LIGHTRAG_DOC_FULL", "LIGHTRAG_DOC_CHUNKS"]:
-                            await conn.execute(f"DELETE FROM {table} WHERE workspace=$1", workspace)
-                    print(f"Cleared all doc tables for workspace={workspace}")
-            except Exception as clear_err:
-                print(f"Note: Could not clear doc tables: {clear_err}")
             await r.ainsert(content)
             return {"status": "success", "message": "Pipeline initialized and data ingested."}
         return {"status": "partial", "message": "Pipeline initialized but data file missing."}
@@ -194,25 +182,16 @@ async def init_pipeline():
 
 @app.post("/api/ask")
 async def ask(req: Q):
-    async def stream():
-        try:
-            yield f"data: {json.dumps({'token': 'Thinking...'})}\n\n"
-            await asyncio.sleep(0.1)
-            r = await get_rag()
-            query_mode = req.mode if req.mode in ["local", "global", "hybrid"] else "local"
-            result = await r.aquery(req.question, param=QueryParam(mode=query_mode))
-            text_result = str(result or "").strip()
-            if not text_result:
-                yield f"data: {json.dumps({'token': 'I could not find a specific answer. Make sure /api/init has been run.'})}\n\n"
-            else:
-                for i, word in enumerate(text_result.split(" ")):
-                    token = word + (" " if i < len(text_result.split(" ")) - 1 else "")
-                    yield f"data: {json.dumps({'token': token})}\n\n"
-                    await asyncio.sleep(0.01)
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        yield "data: [DONE]\n\n"
-    return StreamingResponse(stream(), media_type="text/event-stream")
+    try:
+        r = await get_rag()
+        query_mode = req.mode if req.mode in ["local", "global", "hybrid"] else "local"
+        result = await r.aquery(req.question, param=QueryParam(mode=query_mode))
+        text_result = str(result or "").strip()
+        if not text_result:
+            text_result = "I could not find a specific answer. Make sure /api/init has been run."
+        return {"answer": text_result}
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/api/graph")
 async def graph():
