@@ -115,7 +115,7 @@ async def get_rag():
         rag = LightRAG(
             working_dir=WORKING_DIR,
             llm_model_func=nvidia_llm,
-            embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=8192, func=nvidia_embed),
+            embedding_func=EmbeddingFunc(embedding_dim=1024, max_token_size=512, func=nvidia_embed),
             graph_storage="Neo4JStorage",
             vector_storage="PGVectorStorage",
             kv_storage="PGKVStorage",
