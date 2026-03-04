@@ -83,12 +83,13 @@ from lightrag.utils import EmbeddingFunc
 async def nvidia_llm(prompt, system_prompt=None, history_messages=None, **kwargs):
     kwargs.pop("history_messages", None)
     return await openai_complete_if_cache(
-        "meta/llama-3.1-8b-instruct", prompt,
+        "z-ai/glm5", prompt,
         system_prompt=system_prompt,
         history_messages=history_messages or [],
         api_key=NVIDIA_API_KEY,
         base_url=NVIDIA_BASE_URL,
         temperature=1, top_p=1, max_tokens=16384,
+        openai_client_configs={"timeout": 600.0},
         **kwargs,
     )
 
