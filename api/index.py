@@ -198,6 +198,45 @@ async def init_pipeline():
         traceback.print_exc()
         return {"status": "error", "message": str(e)}
 
+@app.get("/api/debug")
+async def debug():
+    r = await get_rag()
+    out = {}
+    
+    # Check doc status in Postgres
+    try:
+        db = r.doc_status.db
+        async with db.pool.acquire() as conn:
+            rows = await conn.fetch("SELECT * FROM LIGHTRAG_DOC_STATUS WHERE workspace=$1", db.workspace)
+            out["doc_status_rows"] = [dict(r) for r in rows]
+            out["workspace"] = db.workspace
+            
+            # Check if any chunks exist
+            chunks = await conn.fetchval("SELECT COUNT(*) FROM LIGHTRAG_DOC_CHUNKS WHERE workspace=$1", db.workspace)
+            out["chunk_count"] = chunks
+            
+            # Check vectors
+            try:
+                vecs = await conn.fetchval("SELECT COUNT(*) FROM LIGHTRAG_VEC_CHUNKS WHERE workspace=$1", db.workspace)
+                out["vector_count"] = vecs
+            except Exception as e:
+                out["vector_error"] = str(e)
+    except Exception as e:
+        out["postgres_error"] = str(e)
+    
+    # Check Neo4j node count
+    try:
+        from neo4j import GraphDatabase
+        driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        with driver.session(database=os.environ.get("NEO4J_DATABASE")) as s:
+            count = s.run("MATCH (n:base) RETURN count(n) AS c").single()["c"]
+            out["neo4j_node_count"] = count
+        driver.close()
+    except Exception as e:
+        out["neo4j_error"] = str(e)
+    
+    return out
+
 @app.post("/api/ask")
 async def ask(req: Q):
     try:
