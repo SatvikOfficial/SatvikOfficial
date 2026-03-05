@@ -180,11 +180,21 @@ def _tokenize_query(text):
 def _rank_schema_documents(question, schema, limit=4):
     docs = (schema or {}).get("documents", [])
     q_tokens = _tokenize_query(question)
+    q_lower = (question or "").lower()
+    intent_bonus = {
+        "education": ("graduate", "graduated", "graduation", "college", "university", "education", "degree"),
+        "projects": ("project", "built", "building", "healthjini", "vaani", "gati", "pipeline"),
+        "experience": ("experience", "work", "worked", "job", "intern", "role"),
+        "skills": ("skills", "stack", "language", "python", "tech", "technology", "tool"),
+        "personality": ("hobby", "interest", "like", "table tennis", "anime"),
+        "identity": ("contact", "email", "linkedin", "github", "portfolio", "live", "location", "based"),
+    }
     ranked = []
     for doc in docs:
         title = re.sub(r"[^a-z0-9]+", " ", (doc.get("title") or "").lower())
         tags = [str(t).lower() for t in (doc.get("tags") or [])]
         content = re.sub(r"[^a-z0-9]+", " ", (doc.get("content") or "").lower())
+        category = str(doc.get("category") or "general").lower()
         score = 0
         for tok in q_tokens:
             if tok in title:
@@ -193,6 +203,9 @@ def _rank_schema_documents(question, schema, limit=4):
                 score += 3
             if tok in content:
                 score += 1
+        for intent_cat, terms in intent_bonus.items():
+            if category == intent_cat and any(term in q_lower for term in terms):
+                score += 6
         priority = int(doc.get("metadata", {}).get("priority", 1))
         ranked.append((score, priority, doc))
 
@@ -239,6 +252,7 @@ def _extract_profile_facts(schema):
         "title": find(r"Professional Title:\s*([^\n]+)"),
         "company": find(r"Current Company:\s*([^\n]+)"),
         "location": find(r"Current Location:\s*([^\n]+)"),
+        "education": find(r"Education:\s*([^\n]+)"),
         "email": find(r"Email:\s*([^\n]+)"),
         "linkedin": find(r"LinkedIn:\s*([^\n]+)"),
         "github": find(r"GitHub:\s*([^\n]+)"),
@@ -246,42 +260,45 @@ def _extract_profile_facts(schema):
     }
 
 
-def _answer_direct_fact(question, facts):
-    q = (question or "").lower()
-    if not q:
-        return None
+def _tag_node_type(tag, category):
+    token = (tag or "").strip().lower()
+    language = {"python", "java", "c++", "sql", "javascript", "typescript"}
+    project = {"healthjini", "pm gatishakti", "vaani"}
+    organization = {"nuvo ai", "meril life sciences", "indiaai", "iiit delhi", "bhashini", "nic", "indus services", "vit"}
+    domain = {
+        "nlp",
+        "clinical nlp",
+        "speech ai",
+        "embeddings",
+        "classification",
+        "regression",
+        "healthcare ai",
+        "multilingual ai",
+        "governance ai",
+    }
+    if token in project:
+        return "Project"
+    if token in organization:
+        return "Organization"
+    if token in language:
+        return "Language"
+    if token in domain:
+        return "Domain"
+    if category in {"skills", "projects", "experience"}:
+        return "Technology"
+    return "Topic"
 
-    location_terms = ("where", "live", "living", "location", "based")
-    if facts.get("location") and any(term in q for term in location_terms):
-        return f"I currently live in {facts['location']}."
 
-    role_terms = ("profession", "professionally", "role", "title", "what do you do", "what are you")
-    project_terms = ("healthjini", "gati", "vaani", "project", "built", "work on", "tell me about")
-    if (
-        facts.get("title")
-        and any(term in q for term in role_terms)
-        and not any(term in q for term in project_terms)
-    ):
-        if facts.get("company"):
-            return f"I am an {facts['title']} at {facts['company']}."
-        return f"I am an {facts['title']}."
-
-    if facts.get("company") and ("company" in q or "where do you work" in q):
-        return f"I currently work at {facts['company']}."
-
-    if "email" in q and facts.get("email"):
-        return f"You can reach me at {facts['email']}."
-
-    if "linkedin" in q and facts.get("linkedin"):
-        return f"Here is my LinkedIn: {facts['linkedin']}"
-
-    if "github" in q and facts.get("github"):
-        return f"My GitHub is {facts['github']}."
-
-    if "portfolio" in q and facts.get("portfolio"):
-        return f"My portfolio is {facts['portfolio']}."
-
-    return None
+def _tag_edge_label(tag_type):
+    if tag_type == "Language":
+        return "codes_in"
+    if tag_type == "Project":
+        return "builds"
+    if tag_type == "Organization":
+        return "works_with"
+    if tag_type == "Domain":
+        return "focuses_on"
+    return "uses"
 
 
 def _schema_graph_overlay(schema, max_docs=18):
@@ -301,29 +318,95 @@ def _schema_graph_overlay(schema, max_docs=18):
     for doc in docs:
         doc_id = f"profile_{doc.get('id')}"
         doc_name = doc.get("title") or "Profile Section"
-        doc_type = (doc.get("category") or "general").title()
+        category = (doc.get("category") or "general").lower()
+        doc_type_map = {
+            "identity": "Identity",
+            "education": "Education",
+            "experience": "Experience",
+            "projects": "ProjectPortfolio",
+            "skills": "SkillSet",
+            "personality": "Personality",
+            "general": "ProfileSection",
+        }
+        doc_type = doc_type_map.get(category, "ProfileSection")
         doc_desc = doc.get("metadata", {}).get("summary", "")
         nodes[doc_id] = {"id": doc_id, "name": doc_name, "type": doc_type, "desc": doc_desc}
-        edge_key = (root_id, doc_id, "profile")
+        edge_key = (root_id, doc_id, f"has_{category}")
         if edge_key not in seen:
             seen.add(edge_key)
-            links.append({"source": root_id, "target": doc_id, "label": "profile", "weight": 1.0})
+            links.append({"source": root_id, "target": doc_id, "label": f"has_{category}", "weight": 1.0})
 
         for tag in (doc.get("tags") or [])[:4]:
             tag_id = f"tag_{re.sub(r'[^a-z0-9]+', '_', tag.lower()).strip('_')}"
             if not tag_id:
                 continue
+            tag_type = _tag_node_type(tag, category)
             if tag_id not in nodes:
                 nodes[tag_id] = {
                     "id": tag_id,
                     "name": tag,
-                    "type": "Technology",
+                    "type": tag_type,
                     "desc": "",
                 }
-            tkey = (doc_id, tag_id, "uses")
+            rel = _tag_edge_label(tag_type)
+            tkey = (doc_id, tag_id, rel)
             if tkey not in seen:
                 seen.add(tkey)
-                links.append({"source": doc_id, "target": tag_id, "label": "uses", "weight": 0.8})
+                links.append({"source": doc_id, "target": tag_id, "label": rel, "weight": 0.8})
+
+    facts = _extract_profile_facts(schema)
+    fact_nodes = [
+        ("role", facts.get("title"), "Role", "works_as"),
+        ("company", facts.get("company"), "Organization", "works_at"),
+        ("location", facts.get("location"), "Location", "lives_in"),
+        ("education", facts.get("education"), "Education", "studied"),
+    ]
+    for prefix, value, ntype, rel in fact_nodes:
+        if not value:
+            continue
+        nid = f"{prefix}_{re.sub(r'[^a-z0-9]+', '_', value.lower()).strip('_')}"
+        if not nid:
+            continue
+        if nid not in nodes:
+            nodes[nid] = {"id": nid, "name": value, "type": ntype, "desc": ""}
+        edge_key = (root_id, nid, rel)
+        if edge_key not in seen:
+            seen.add(edge_key)
+            links.append({"source": root_id, "target": nid, "label": rel, "weight": 1.1})
+
+    for doc in docs:
+        title = str(doc.get("title") or "").lower()
+        content = doc.get("content") or ""
+        if "interests" in title:
+            for line in content.splitlines():
+                item = line.strip(" -\t")
+                if not item:
+                    continue
+                if ":" in item:
+                    item = item.split(":", 1)[0].strip()
+                hob_id = f"hobby_{re.sub(r'[^a-z0-9]+', '_', item.lower()).strip('_')}"
+                if not hob_id or len(item) < 2:
+                    continue
+                if hob_id not in nodes:
+                    nodes[hob_id] = {"id": hob_id, "name": item, "type": "Interest", "desc": ""}
+                hkey = (root_id, hob_id, "likes")
+                if hkey not in seen:
+                    seen.add(hkey)
+                    links.append({"source": root_id, "target": hob_id, "label": "likes", "weight": 0.9})
+        if "project" in title:
+            for line in content.splitlines():
+                item = line.strip(" -\t")
+                m = re.match(r"^([A-Za-z0-9][A-Za-z0-9 ()/+.-]{2,}):", item)
+                if not m:
+                    continue
+                pname = m.group(1).strip()
+                pid = f"project_{re.sub(r'[^a-z0-9]+', '_', pname.lower()).strip('_')}"
+                if pid not in nodes:
+                    nodes[pid] = {"id": pid, "name": pname, "type": "Project", "desc": ""}
+                pkey = (root_id, pid, "builds")
+                if pkey not in seen:
+                    seen.add(pkey)
+                    links.append({"source": root_id, "target": pid, "label": "builds", "weight": 1.2})
 
     return list(nodes.values()), links
 
@@ -366,7 +449,7 @@ def _categorize_section(title, content):
         ("experience", ("experience", "engineer", "intern", "nuvo", "meril", "bhashini", "indiaai", "iiit", "nic")),
         ("projects", ("project", "pipeline", "healthjini", "gatishakti", "vaani", "translation", "system")),
         ("skills", ("skills", "technical stack", "languages", "frameworks", "devops", "ml", "ai")),
-        ("personality", ("personality", "belief", "communication style", "hobby", "behavior")),
+        ("personality", ("personality", "belief", "communication style", "hobby", "behavior", "interest", "anime", "table tennis")),
     ]
     for category, terms in rules:
         if any(t in hay for t in terms):
@@ -374,10 +457,22 @@ def _categorize_section(title, content):
     return "general"
 
 
-def _extract_tags(title, content, limit=10):
+def _extract_tags(title, content, category="general", limit=10):
     corpus = f"{title} {content}"
     tags = []
     seen = set()
+    explicit_candidates = []
+    for raw_line in content.splitlines():
+        line = raw_line.strip(" -\t")
+        m = re.match(r"(?i)^tags?\s*:\s*(.+)$", line)
+        if not m:
+            continue
+        parts = re.split(r",|\|", m.group(1))
+        for part in parts:
+            cleaned = part.strip().strip(".;:")
+            if cleaned:
+                explicit_candidates.append(cleaned)
+
     known = [
         "Python",
         "FastAPI",
@@ -396,24 +491,54 @@ def _extract_tags(title, content, limit=10):
         "Embeddings",
         "Speech",
         "Healthcare",
+        "Clinical NLP",
+        "Speech AI",
+        "Applied AI",
+        "Public-sector ML",
+        "WebSocket",
+        "FFmpeg",
+        "PyAV",
+        "yt-dlp",
+        "VAD",
+        "RTP",
+        "RTMP",
+        "SOAP",
+        "JWT",
+        "MongoDB",
+        "AWS",
+        "GCP",
         "PM GatiShakti",
         "HealthJini",
+        "Vaani",
+        "Nuvo AI",
+        "Meril Life Sciences",
+        "VIT",
     ]
+    banned = {"satvik", "mudgal", "kapil", "nimisha", "shephalica", "didi", "attack", "titan", "anime"}
+
+    for item in explicit_candidates:
+        key = item.lower()
+        if key in banned:
+            continue
+        if key not in seen:
+            seen.add(key)
+            tags.append(item)
+        if len(tags) >= limit:
+            return tags
+
     for item in known:
         if item.lower() in corpus.lower():
             key = item.lower()
+            if key in banned:
+                continue
             if key not in seen:
                 seen.add(key)
                 tags.append(item)
             if len(tags) >= limit:
                 return tags
-    for token in re.findall(r"\b[A-Z][A-Za-z0-9\+\#\.-]{2,}\b", corpus):
-        key = token.lower()
-        if key not in seen:
-            seen.add(key)
-            tags.append(token)
-        if len(tags) >= limit:
-            break
+
+    if category == "interests":
+        return [t for t in tags if t.lower() not in {"attack", "titan"}]
     return tags
 
 
@@ -486,7 +611,7 @@ def _build_profile_schema(raw_text, source_path):
             summary = summary.rsplit(" ", 1)[0].rstrip() + "..."
         summary = re.sub(r"(?i)^project:\s*[a-z0-9_-]+\s*", "", summary).strip()
         category = _categorize_section(title, content)
-        tags = _extract_tags(title, content, limit=10)
+        tags = _extract_tags(title, content, category=category, limit=10)
         doc_hash = hashlib.md5(f"{title}|{content[:160]}".encode("utf-8")).hexdigest()[:10]
         docs.append(
             {
@@ -868,6 +993,7 @@ app.add_middleware(
 class Q(BaseModel):
     question: str
     mode: str = "hybrid"
+    history: list[dict[str, str]] = []
 
 
 # ── Endpoints ───────────────────────────────────────────────────────
@@ -963,11 +1089,7 @@ async def ask(req: Q):
         async with profile_cache_lock:
             payload = _load_profile_payload()
         schema = payload.get("schema") or {}
-        direct_answer = _answer_direct_fact(req.question, _extract_profile_facts(schema))
-        if direct_answer:
-            return {"answer": direct_answer, "mode_used": "profile_rag"}
-
-        context = _build_profile_context(req.question, schema, limit=4)
+        context = _build_profile_context(req.question, schema, limit=5)
         if not context:
             return {
                 "answer": (
@@ -977,11 +1099,36 @@ async def ask(req: Q):
                 "mode_used": "profile_rag",
             }
 
+        history_lines = []
+        for turn in (req.history or [])[-8:]:
+            role = str(turn.get("role", "")).strip().lower()
+            content = str(turn.get("content", "")).strip()
+            if role not in {"user", "assistant"} or not content:
+                continue
+            label = "User" if role == "user" else "Assistant"
+            history_lines.append(f"{label}: {content}")
+        history_block = "\n".join(history_lines)
+
+        facts = _extract_profile_facts(schema)
+        fact_lines = []
+        for key in ("name", "title", "company", "location", "education"):
+            value = facts.get(key)
+            if value:
+                fact_lines.append(f"{key.title()}: {value}")
+        facts_block = "\n".join(fact_lines)
+
         prompt = (
-            "Use the profile context below to answer the user's question in first person.\n"
-            "Keep the reply natural, specific, and concise.\n"
-            "When the context contains explicit facts (for example location, role, company, contact), use those exact facts.\n"
-            "If the context does not contain the answer, clearly say that detail is not in my profile.\n\n"
+            "You are chatting as Satvik in first person.\n"
+            "Respond naturally like a real conversation, without repeating the same intro every turn.\n"
+            "Use only the profile facts and context provided below. Do not add extra anecdotes, timelines, or places.\n"
+            "Keep answers concise (1-3 short sentences).\n"
+            "If asked about hobbies/interests, answer clearly in first person using only stated interests.\n"
+            "For yes/no questions, start with a direct yes/no when evidence exists.\n"
+            "Do not add reasons or stories unless they are explicitly present in the profile context.\n"
+            "Only share contact details when the user asks for them.\n"
+            "If a detail is missing, say so briefly.\n\n"
+            f"PROFILE FACTS:\n{facts_block}\n\n"
+            f"RECENT CHAT HISTORY:\n{history_block or 'None'}\n\n"
             f"USER QUESTION:\n{req.question}\n\n"
             f"PROFILE CONTEXT:\n{context}"
         )
@@ -989,8 +1136,8 @@ async def ask(req: Q):
             nvidia_llm(
                 prompt,
                 system_prompt=ASSISTANT_SYSTEM_PROMPT,
-                temperature=0.3,
-                top_p=0.9,
+                temperature=0.1,
+                top_p=0.3,
                 max_tokens=420,
             ),
             timeout=25.0,
@@ -1021,7 +1168,7 @@ async def ask_get():
 
 
 @app.get("/api/graph")
-async def graph():
+async def graph(include_live: bool = False):
     from collections import Counter
     from neo4j import GraphDatabase
 
@@ -1031,57 +1178,57 @@ async def graph():
     nodes = {node["id"]: node for node in overlay_nodes}
     links = list(overlay_links)
 
-    try:
-        driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
-        with driver.session(database=os.environ.get("NEO4J_DATABASE")) as s:
-            res = s.run(
-                "MATCH (n:base) WITH n LIMIT 220 "
-                "OPTIONAL MATCH (n)-[r]->(m:base) "
-                "RETURN n.entity_id AS sname, n.entity_type AS stype, "
-                "n.description AS sdesc, m.entity_id AS tname, "
-                "r.keywords AS rlabel, r.weight AS w"
-            )
-            live_nodes = {}
-            live_links = []
-            seen = set()
-            for rec in res:
-                sname = rec["sname"]
-                if sname and sname not in live_nodes:
-                    live_nodes[sname] = {
-                        "id": sname,
-                        "name": sname,
-                        "type": rec["stype"] or "Unknown",
-                        "desc": rec["sdesc"] or "",
-                    }
-                tname = rec["tname"]
-                if tname is not None:
-                    if tname not in live_nodes:
-                        live_nodes[tname] = {"id": tname, "name": tname, "type": "Unknown", "desc": ""}
-                    if sname:
-                        key = (sname, tname)
-                        if key not in seen:
-                            seen.add(key)
-                            live_links.append(
-                                {
-                                    "source": sname,
-                                    "target": tname,
-                                    "label": (rec["rlabel"] or "").split(",")[0],
-                                    "weight": float(rec["w"] or 1),
-                                }
-                            )
-        driver.close()
-        for node in live_nodes.values():
-            nodes[node["id"]] = node
-        existing = {(lk["source"], lk["target"], lk.get("label", "")) for lk in links}
-        for lk in live_links:
-            key = (lk["source"], lk["target"], lk.get("label", ""))
-            if key not in existing:
-                existing.add(key)
-                links.append(lk)
-
-        warning = None
-    except Exception as e:
-        warning = str(e)
+    warning = None
+    if include_live:
+        try:
+            driver = GraphDatabase.driver(NEO4J_URI_BOLT, auth=(NEO4J_USER, NEO4J_PASSWORD))
+            with driver.session(database=os.environ.get("NEO4J_DATABASE")) as s:
+                res = s.run(
+                    "MATCH (n:base) WITH n LIMIT 220 "
+                    "OPTIONAL MATCH (n)-[r]->(m:base) "
+                    "RETURN n.entity_id AS sname, n.entity_type AS stype, "
+                    "n.description AS sdesc, m.entity_id AS tname, "
+                    "r.keywords AS rlabel, r.weight AS w"
+                )
+                live_nodes = {}
+                live_links = []
+                seen = set()
+                for rec in res:
+                    sname = rec["sname"]
+                    if sname and sname not in live_nodes:
+                        live_nodes[sname] = {
+                            "id": sname,
+                            "name": sname,
+                            "type": rec["stype"] or "Unknown",
+                            "desc": rec["sdesc"] or "",
+                        }
+                    tname = rec["tname"]
+                    if tname is not None:
+                        if tname not in live_nodes:
+                            live_nodes[tname] = {"id": tname, "name": tname, "type": "Unknown", "desc": ""}
+                        if sname:
+                            key = (sname, tname)
+                            if key not in seen:
+                                seen.add(key)
+                                live_links.append(
+                                    {
+                                        "source": sname,
+                                        "target": tname,
+                                        "label": (rec["rlabel"] or "").split(",")[0],
+                                        "weight": float(rec["w"] or 1),
+                                    }
+                                )
+            driver.close()
+            for node in live_nodes.values():
+                nodes[node["id"]] = node
+            existing = {(lk["source"], lk["target"], lk.get("label", "")) for lk in links}
+            for lk in live_links:
+                key = (lk["source"], lk["target"], lk.get("label", ""))
+                if key not in existing:
+                    existing.add(key)
+                    links.append(lk)
+        except Exception as e:
+            warning = str(e)
 
     type_counts = Counter((n.get("type") or "unknown").lower() for n in nodes.values())
     return {

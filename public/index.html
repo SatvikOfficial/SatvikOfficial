@@ -457,6 +457,12 @@ let readinessTimer = null;
 let initRequested = false;
 let displayProgress = 0;
 let graphLoaded = false;
+let chatHistory = [
+  {
+    role: 'assistant',
+    content: "Hi, I am Satvik's AI twin. Once my RAG pipeline is ready, ask me anything about my work, projects, and skills.",
+  },
+];
 
 let svgZoom = null;
 let simulation = null;
@@ -651,12 +657,14 @@ async function sendMsg() {
   setComposerEnabled(true);
 
   const typing = addMsg('bot', '<span class="typing"><span></span><span></span><span></span></span>');
+  const userTurn = { role: 'user', content: question };
+  const outboundHistory = [...chatHistory.slice(-8), userTurn];
 
   try {
     const res = await fetch(`${API}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, mode: 'hybrid' }),
+      body: JSON.stringify({ question, mode: 'hybrid', history: outboundHistory }),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -665,12 +673,16 @@ async function sendMsg() {
     if (!res.ok || data.error) {
       if (data.pipeline) renderPipelineState(data.pipeline);
       addMsg('bot', data.error || `Request failed (${res.status})`);
+      chatHistory = [...chatHistory, userTurn];
     } else {
-      addMsg('bot', data.answer || 'I could not generate a response.');
+      const answer = data.answer || 'I could not generate a response.';
+      addMsg('bot', answer);
+      chatHistory = [...chatHistory, userTurn, { role: 'assistant', content: answer }];
     }
   } catch (err) {
     typing.remove();
     addMsg('bot', `Request failed: ${err.message}`);
+    chatHistory = [...chatHistory, userTurn];
   }
 
   busy = false;
